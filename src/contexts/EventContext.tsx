@@ -61,8 +61,6 @@ export const EventProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (user && joinedEventIds.length >= 0) {
       try {
         localStorage.setItem(`joinedEvents_${user.id}`, JSON.stringify(joinedEventIds))
-        // Update user profile with attended events
-        updateUser({ eventsAttended: joinedEventIds })
         console.log('Saved joined events for user:', user.name, joinedEventIds)
       } catch (error) {
         console.error('Error saving joined events:', error)
@@ -84,6 +82,10 @@ export const EventProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   // FIXED: Completely rewritten join event logic with operation locks
   const joinEvent = useCallback((eventId: string) => {
+    console.log('joinEvent called for event:', eventId);
+    console.log('Current joinedEventIds:', joinedEventIds);
+    const currentEvent = events.find(e => e.id === eventId);
+    console.log('Current attendee count for event', eventId, ':', currentEvent?.attendees);
     if (!user) {
       console.log('Cannot join event: user not logged in')
       return
@@ -130,7 +132,7 @@ export const EventProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       
       // FIXED: Update event attendee count
       setEvents(prev => prev.map(e => {
-        if (e.id === eventId && !joinedEventIds.includes(eventId)) {
+        if (e.id === eventId) {
           const newAttendeeCount = Math.min(e.attendees + 1, e.maxAttendees)
           console.log(`Event ${eventId}: Attendees ${e.attendees} -> ${newAttendeeCount}`)
           return { 
@@ -155,6 +157,10 @@ export const EventProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   // FIXED: Completely rewritten leave event logic with operation locks
   const leaveEvent = useCallback((eventId: string) => {
+    console.log('leaveEvent called for event:', eventId);
+    console.log('Current joinedEventIds:', joinedEventIds);
+    const currentEvent = events.find(e => e.id === eventId);
+    console.log('Current attendee count for event', eventId, ':', currentEvent?.attendees);
     if (!user) {
       console.log('Cannot leave event: user not logged in')
       return
@@ -185,10 +191,10 @@ export const EventProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       setEvents(prev => prev.map(e => {
         if (e.id === eventId && joinedEventIds.includes(eventId)) {
           const newAttendeeCount = Math.max(e.attendees - 1, 0)
-          console.log(`Event ${eventId}: Attendees ${e.attendees} -> ${newAttendeeCount}`)
+ console.log(`Event ${eventId}: Attendees ${e.attendees} -> ${newAttendeeCount}`);
           return { 
             ...e, 
-            attendees: newAttendeeCount,
+ attendees: newAttendeeCount,
             isAttending: false
           }
         }

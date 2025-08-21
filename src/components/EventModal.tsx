@@ -70,12 +70,13 @@ const EventModal: React.FC<EventModalProps> = ({
   // FIXED: Check if user is attending this event using real-time data
   const isUserAttending = isEventJoined(currentEvent.id)
   const isEventFull = currentEvent.attendees >= currentEvent.maxAttendees
-  const isUserInterested = user && currentEvent.interestedUsers.includes(user.name)
+  const isUserInterested = user && currentEvent.interestedUsers?.includes(user.name)
   const isPastEvent = new Date(currentEvent.date) < new Date()
   const canRate = isPastEvent && isUserAttending && user
 
   // FIXED: Handle attendance toggle with proper state management
   const handleToggleAttendance = useCallback(async (e: React.MouseEvent) => {
+    console.log(`handleToggleAttendance called for event: ${currentEvent.id}. isUserAttending: ${isUserAttending}`);
     e.preventDefault()
     e.stopPropagation()
     
@@ -86,7 +87,7 @@ const EventModal: React.FC<EventModalProps> = ({
     try {
       console.log('Toggling attendance for event:', currentEvent.id, 'Current status:', isUserAttending)
       
-      // Call the parent handler which updates the context
+      console.log('Before onToggleAttendance call');
       onToggleAttendance(currentEvent.id)
       
       // Show feedback to user
@@ -95,6 +96,7 @@ const EventModal: React.FC<EventModalProps> = ({
         : t('events.feedback.joinedEvent') || 'You have joined the event!'
       
       // Small delay to show the processing state
+      console.log('After onToggleAttendance call, waiting for delay');
       await new Promise(resolve => setTimeout(resolve, 300))
       
       console.log(message)
