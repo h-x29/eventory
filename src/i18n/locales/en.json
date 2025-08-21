@@ -189,7 +189,6 @@
   "events": {
     "title": "Events",
     "search": "Search events...",
-    "create": "Create Event",
     "mapInstructions": "Hover over markers for quick info, click to view details",
     "mapLegend": {
       "title": "Event Categories"
@@ -262,7 +261,8 @@
         "location": "Enter event location",
         "maxAttendees": "Enter maximum number of attendees",
         "price": "Enter price (0 for free)",
-        "tags": "Add tags separated by commas"
+        "tags": "Add tags separated by commas",
+        "category": "Select category"
       },
       "buttons": {
         "create": "Create Event",
@@ -272,7 +272,8 @@
     "feedback": {
       "joinedEvent": "You have joined the event!",
       "leftEvent": "You have left the event"
-    }
+    },
+    "noResultsDescription": "Try adjusting your search or filters to find events."
   },
   "newsletter": {
     "title": "Event Newsletter",
@@ -403,5 +404,54 @@
     "sogang": "Sogang University",
     "hongik": "Hongik University",
     "konkuk": "Konkuk University"
+  },
+  "friends": {
+    "title": "Friends",
+    "subtitle": "Connect with fellow students from Seoul universities",
+    "search": "Search friends...",
+    "all": "All",
+    "online": "Online",
+    "requests": "Requests",
+    "suggestions": "Suggestions",
+    "sendMessage": "Send Message",
+    "viewProfile": "View Profile",
+    "noFriends": "No friends found",
+    "offline": "Offline",
+    "discover": "Discover Friends",
+    "labels": {
+      "age": "Age",
+      "mbti": "MBTI",
+      "hobby": "Hobby",
+      "languages": "Languages"
+    },
+    "empty": {
+      "noPendingRequests": "No pending friend requests",
+      "noOnline": "No friends are currently online",
+      "tryAdjusting": "Try adjusting your search or explore suggestions"
+    },
+    "profile": {
+      "yearsOld": "years old",
+      "personality": "Personality",
+      "about": "About",
+      "hobby": "Hobby",
+      "languages": "Languages",
+      "commonInterests": "Common Interests",
+      "mutualFriends": "Mutual Friends",
+      "recentActivity": "Recent Activity",
+      "attended": "Attended",
+      "interested": "Interested",
+      "sendMessage": "Send Message",
+      "addFriend": "Add Friend",
+      "interests": {
+        "photography": "Photography",
+        "koreanCulture": "Korean Culture",
+        "universityEvents": "University Events"
+      },
+      "sampleEvents": {
+        "languageExchange": "Language Exchange Meetup",
+        "photographyWorkshop": "Photography Workshop",
+        "basketballTournament": "Basketball Tournament"
+      }
+    }
   }
 }

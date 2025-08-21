@@ -189,7 +189,6 @@
   "events": {
     "title": "이벤트",
     "search": "이벤트 검색...",
-    "create": "이벤트 만들기",
     "mapInstructions": "마커에 마우스를 올려 빠른 정보를 보고, 클릭하여 세부 정보를 확인하세요",
     "mapLegend": {
       "title": "이벤트 카테고리"
@@ -262,8 +261,9 @@
         "location": "이벤트 장소를 입력하세요",
         "maxAttendees": "최대 참가자 수를 입력하세요",
         "price": "가격을 입력하세요 (무료는 0)",
-        "tags": "쉼표로 구분된 태그를 추가하세요"
-      },
+        "tags": "쉼표로 구분된 태그를 추가하세요",
+        "category": "카테고리를 선택하세요"
+        },
       "buttons": {
         "create": "이벤트 만들기",
         "cancel": "취소"
@@ -272,7 +272,8 @@
     "feedback": {
       "joinedEvent": "이벤트에 참여했습니다!",
       "leftEvent": "이벤트에서 나갔습니다"
-    }
+    },
+    "noResultsDescription": "검색어나 필터를 조정해 보세요."
   },
   "newsletter": {
     "title": "이벤트 뉴스레터",
@@ -403,5 +404,54 @@
     "sogang": "서강대학교",
     "hongik": "홍익대학교",
     "konkuk": "건국대학교"
+  },
+  "friends": {
+    "title": "친구",
+    "subtitle": "서울의 대학생들과 연결하세요",
+    "search": "친구 검색...",
+    "all": "전체",
+    "online": "온라인",
+    "requests": "요청",
+    "suggestions": "추천",
+    "sendMessage": "메시지 보내기",
+    "viewProfile": "프로필 보기",
+    "noFriends": "친구가 없습니다",
+    "offline": "오프라인",
+    "discover": "친구 찾기",
+    "labels": {
+      "age": "나이",
+      "mbti": "MBTI",
+      "hobby": "취미",
+      "languages": "언어"
+    },
+    "empty": {
+      "noPendingRequests": "보류 중인 친구 요청이 없습니다",
+      "noOnline": "현재 온라인인 친구가 없습니다",
+      "tryAdjusting": "검색어를 조정하거나 추천을 확인해 보세요"
+    },
+    "profile": {
+      "yearsOld": "세",
+      "personality": "성격",
+      "about": "소개",
+      "hobby": "취미",
+      "languages": "언어",
+      "commonInterests": "공통 관심사",
+      "mutualFriends": "함께 아는 친구",
+      "recentActivity": "최근 활동",
+      "attended": "참석",
+      "interested": "관심 있음",
+      "sendMessage": "메시지 보내기",
+      "addFriend": "친구 추가",
+      "interests": {
+        "photography": "사진",
+        "koreanCulture": "한국 문화",
+        "universityEvents": "대학 행사"
+      },
+      "sampleEvents": {
+        "languageExchange": "언어 교환 모임",
+        "photographyWorkshop": "사진 워크숍",
+        "basketballTournament": "농구 토너먼트"
+      }
+    }
   }
 }

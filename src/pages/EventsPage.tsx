@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Search, Plus, Map, List, Filter } from 'lucide-react'
+import { Search, Plus, Map, List } from 'lucide-react'
 import { useEvents } from '../contexts/EventContext'
 import { useAuth } from '../contexts/AuthContext'
 import Navigation from '../components/Navigation'
@@ -35,9 +35,11 @@ const EventsPage: React.FC = () => {
 
   // Filter events based on search and category
   const filteredEvents = events.filter(event => {
-    const matchesSearch = event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         event.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         event.location.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesSearch =
+      event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      event.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      event.location.toLowerCase().includes(searchTerm.toLowerCase())
+
     const matchesCategory = selectedCategory === 'all' || event.category === selectedCategory
     return matchesSearch && matchesCategory
   })
@@ -51,15 +53,14 @@ const EventsPage: React.FC = () => {
       isAttending: false
     })
     setShowCreateEvent(false)
-    alert(t('events.create.success') || 'Event created successfully! 🎉')
+    alert(t('events.create.success', 'Event created successfully! 🎉')) // ✅ leaf key with fallback
   }
 
   const handleToggleAttendance = (eventId: string) => {
     if (!user) {
-      alert(t('auth.loginRequired') || 'Please log in to join events')
+      alert(t('auth.loginRequired', 'Please login to join events'))
       return
     }
-
     if (isEventJoined(eventId)) {
       leaveEvent(eventId)
     } else {
@@ -69,24 +70,10 @@ const EventsPage: React.FC = () => {
 
   const handleToggleInterest = (eventId: string) => {
     if (!user) {
-      alert(t('auth.loginRequired') || 'Please log in to show interest in events')
+      alert(t('auth.loginRequired', 'Please log in to show interest in events'))
       return
     }
-
     toggleInterest(eventId)
-
-    // Update selected event if it's the same event
-    if (selectedEvent && selectedEvent.id === eventId) {
-      const isCurrentlyInterested = selectedEvent.interestedUsers.includes(user.name)
-      const updatedInterestedUsers = isCurrentlyInterested
-        ? selectedEvent.interestedUsers.filter(userId => userId !== user.name)
-        : [...selectedEvent.interestedUsers, user.name]
-      
-      setSelectedEvent({
-        ...selectedEvent,
-        interestedUsers: updatedInterestedUsers
-      })
-    }
   }
 
   const handleOpenGroupChat = (event: Event) => {
@@ -94,26 +81,28 @@ const EventsPage: React.FC = () => {
     setShowGroupChat(true)
   }
 
-  // FIXED: Handle event click from map markers
   const handleEventClick = (event: Event) => {
-    console.log('Event clicked from map:', event.title)
     setSelectedEvent(event)
   }
+
+  const createLabel = t('events.create.buttons.create') // ✅ use leaf string, not the parent object
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Navigation />
-      
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">{t('events.title')}</h1>
             <p className="text-gray-600 mt-1">
-              {filteredEvents.length} {filteredEvents.length === 1 ? 'event' : 'events'} {t('common.found') || 'found'}
+              {filteredEvents.length}{' '}
+              {t(filteredEvents.length === 1 ? 'common.event' : 'common.events')}{' '}
+              {t('common.found', 'found')}
             </p>
           </div>
-          
+
           <div className="flex items-center gap-3 w-full sm:w-auto">
             {/* View Mode Toggle */}
             <div className="flex bg-gray-100 rounded-lg p-1">
@@ -141,15 +130,15 @@ const EventsPage: React.FC = () => {
               </button>
             </div>
 
-            {/* FIXED: Create Event Button - Always visible when user is logged in */}
+            {/* Create Event Button */}
             {user && (
               <button
                 onClick={() => setShowCreateEvent(true)}
                 className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-sm flex-shrink-0"
               >
                 <Plus className="w-5 h-5" />
-                <span className="hidden sm:inline">{t('events.create')}</span>
-                <span className="sm:hidden">{t('events.create')}</span>
+                <span className="hidden sm:inline">{createLabel}</span>
+                <span className="sm:hidden">{createLabel}</span>
               </button>
             )}
           </div>
@@ -221,7 +210,7 @@ const EventsPage: React.FC = () => {
             </div>
             <h3 className="text-lg font-medium text-gray-900 mb-2">{t('common.noResults')}</h3>
             <p className="text-gray-600 mb-6">
-              {t('events.noResultsDescription') || 'Try adjusting your search or filters to find events.'}
+              {t('events.noResultsDescription', 'Try adjusting your search or filters to find events.')}
             </p>
             {user && (
               <button
@@ -229,7 +218,7 @@ const EventsPage: React.FC = () => {
                 className="inline-flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium"
               >
                 <Plus className="w-5 h-5" />
-                {t('events.create')}
+                {createLabel}
               </button>
             )}
           </div>

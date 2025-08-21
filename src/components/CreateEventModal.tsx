@@ -18,7 +18,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    category: '',
+    category: '',      // keep empty so placeholder appears
     date: '',
     time: '',
     location: '',
@@ -27,13 +27,14 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({
     tags: ''
   })
 
+  // Use the same labels seen elsewhere in the app
   const categories = [
     { id: 'academic', label: t('categories.academic') },
     { id: 'cultural', label: t('categories.cultural') },
-    { id: 'club', label: t('categories.club') },
+    { id: 'club',     label: t('categories.club') },
     { id: 'language', label: t('categories.language') },
-    { id: 'sports', label: t('categories.sports') },
-    { id: 'social', label: t('categories.social') }
+    { id: 'sports',   label: t('categories.sports') },
+    { id: 'social',   label: t('categories.social') }
   ]
 
   const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -46,15 +47,12 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({
 
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault()
-    
     if (isSubmitting) return
-    
     setIsSubmitting(true)
-    
+
     try {
-      // Add small delay to prevent rapid submissions
-      await new Promise(resolve => setTimeout(resolve, 200))
-      
+      await new Promise(resolve => setTimeout(resolve, 200)) // debounce
+
       const eventData = {
         id: `event-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         title: formData.title.trim(),
@@ -68,10 +66,10 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({
         locationEn: formData.location.trim(),
         organizer: 'Current User',
         organizerEn: 'Current User',
-        maxAttendees: parseInt(formData.maxAttendees),
+        maxAttendees: parseInt(formData.maxAttendees, 10),
         price: parseFloat(formData.price) || 0,
-        tags: formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag),
-        tagsEn: formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag),
+        tags: formData.tags.split(',').map(tag => tag.trim()).filter(Boolean),
+        tagsEn: formData.tags.split(',').map(tag => tag.trim()).filter(Boolean),
         image: `https://images.pexels.com/photos/${Math.floor(Math.random() * 1000000) + 1000}/pexels-photo-${Math.floor(Math.random() * 1000000) + 1000}.jpeg?auto=compress&cs=tinysrgb&w=400`,
         attendees: 0,
         interestedUsers: [],
@@ -80,8 +78,8 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({
       }
 
       onCreateEvent(eventData)
-      
-      // Reset form
+
+      // Reset
       setFormData({
         title: '',
         description: '',
@@ -93,7 +91,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({
         price: '',
         tags: ''
       })
-      
+
       onClose()
     } catch (error) {
       console.error('Error creating event:', error)
@@ -103,9 +101,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({
   }, [formData, onCreateEvent, onClose, isSubmitting])
 
   const handleClose = useCallback(() => {
-    if (!isSubmitting) {
-      onClose()
-    }
+    if (!isSubmitting) onClose()
   }, [onClose, isSubmitting])
 
   if (!isOpen) return null
@@ -120,6 +116,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({
             onClick={handleClose}
             disabled={isSubmitting}
             className="p-2 hover:bg-gray-100 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            aria-label={t('common.close')}
           >
             <X className="w-6 h-6 text-gray-500" />
           </button>
@@ -177,7 +174,10 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
               required
             >
-              <option value="">{t('events.create.selectCategory') || 'Select a category'}</option>
+              {/* ✅ fixed: use a real placeholder key with fallback */}
+              <option value="" disabled>
+                {t('events.create.placeholders.category', 'Select category')}
+              </option>
               {categories.map((category) => (
                 <option key={category.id} value={category.id}>
                   {category.label}
@@ -318,7 +318,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({
             >
               {isSubmitting ? (
                 <span className="flex items-center justify-center">
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
                   {t('common.creating')}
                 </span>
               ) : (
