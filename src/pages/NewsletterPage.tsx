@@ -1,9 +1,9 @@
 import React, { useState } from 'react'
 import { Star, Heart, Clock, Users, MapPin, Calendar, MessageSquare } from 'lucide-react'
-import { useLanguage } from '../contexts/LanguageContext'
 import Navigation from '../components/Navigation'
 import EventModal from '../components/EventModal'
 import RatingModal from '../components/RatingModal'
+import GroupChat from '../components/GroupChat'
 import { Event } from '../types/Event'
 import { useAuth } from '../contexts/AuthContext'
 import { useEvents } from '../contexts/EventContext'
@@ -16,6 +16,10 @@ const NewsletterPage: React.FC = () => {
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null)
   const [showRatingModal, setShowRatingModal] = useState(false)
   const [ratingEvent, setRatingEvent] = useState<Event | null>(null)
+
+  // NEW: group chat state
+  const [showGroupChat, setShowGroupChat] = useState(false)
+  const [selectedChatEvent, setSelectedChatEvent] = useState<Event | null>(null)
 
   // Get current date for filtering past events
   const currentDate = new Date()
@@ -36,15 +40,9 @@ const NewsletterPage: React.FC = () => {
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
     if (i18n.language === 'ko') {
-      return date.toLocaleDateString('ko-KR', {
-        month: 'long',
-        day: 'numeric'
-      })
+      return date.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })
     }
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric'
-    })
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
   }
 
   // Format time based on language
@@ -52,19 +50,10 @@ const NewsletterPage: React.FC = () => {
     const [hours, minutes] = timeString.split(':')
     const date = new Date()
     date.setHours(parseInt(hours), parseInt(minutes))
-    
     if (i18n.language === 'ko') {
-      return date.toLocaleTimeString('ko-KR', {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false
-      })
+      return date.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false })
     }
-    return date.toLocaleTimeString('en-US', {
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true
-    })
+    return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
   }
 
   // Top rated events - all past events with ratings (user can review if participated)
@@ -181,6 +170,12 @@ const NewsletterPage: React.FC = () => {
   const isEventPast = (eventDate: string) => {
     const eventDateObj = new Date(eventDate)
     return eventDateObj < currentDate
+  }
+
+  // NEW: open group chat from EventModal
+  const handleOpenGroupChat = (ev: Event) => {
+    setSelectedChatEvent(ev)
+    setShowGroupChat(true)
   }
 
   return (
@@ -398,6 +393,7 @@ const NewsletterPage: React.FC = () => {
           onClose={() => setSelectedEvent(null)}
           onToggleAttendance={handleToggleAttendance}
           onToggleInterest={handleToggleInterest}
+          onOpenGroupChat={handleOpenGroupChat}  // <-- FIX: wire chat to open GroupChat
         />
       )}
 
@@ -406,6 +402,14 @@ const NewsletterPage: React.FC = () => {
           event={ratingEvent}
           onClose={() => setShowRatingModal(false)}
           onSubmitRating={handleSubmitRating}
+        />
+      )}
+
+      {/* FIX: mount GroupChat so the modal button works on this page */}
+      {showGroupChat && selectedChatEvent && (
+        <GroupChat
+          event={selectedChatEvent}
+          onClose={() => setShowGroupChat(false)}
         />
       )}
     </div>
