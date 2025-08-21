@@ -1,0 +1,314 @@
+{
+  "nav": {
+    "home": "Home",
+    "events": "Events",
+    "newsletter": "Newsletter",
+    "dashboard": "Dashboard",
+    "login": "Login",
+    "signup": "Sign Up",
+    "logout": "Logout"
+  },
+  "landing": {
+    "title": "Connect. Discover. Experience.",
+    "subtitle": "Join Seoul's vibrant student community and discover amazing events happening across universities",
+    "cta": "Join Community",
+    "features": {
+      "discover": {
+        "title": "Discover Events",
+        "description": "Find academic seminars, cultural events, sports tournaments, and social gatherings"
+      },
+      "connect": {
+        "title": "Connect with Students",
+        "description": "Meet like-minded students from Seoul's top universities"
+      },
+      "organize": {
+        "title": "Organize Events",
+        "description": "Host your own events and build your community"
+      }
+    },
+    "featured": {
+      "title": "Featured Events",
+      "subtitle": "Discover what's happening in Seoul's student community",
+      "viewAll": "View All Events"
+    },
+    "stats": {
+      "students": "Active Students",
+      "events": "Monthly Events",
+      "universities": "Universities",
+      "satisfaction": "Satisfaction Rate"
+    },
+    "footer": {
+      "copyright": "© 2024 Seoul Student Events. All rights reserved."
+    }
+  },
+  "auth": {
+    "login": {
+      "title": "Welcome Back",
+      "subtitle": "Sign in to your account to continue",
+      "button": "Sign In",
+      "link": "Don't have an account? Sign up"
+    },
+    "signup": {
+      "title": "Join Our Community",
+      "subtitle": "Create your account to start discovering events",
+      "button": "Create Account",
+      "link": "Already have an account? Sign in"
+    },
+    "fields": {
+      "email": "Email",
+      "password": "Password",
+      "name": "Full Name",
+      "age": "Age",
+      "university": "University",
+      "hobby": "Hobby",
+      "mbti": "MBTI Type",
+      "language": "Languages"
+    },
+    "placeholders": {
+      "email": "your.email@university.ac.kr",
+      "password": "Enter your password",
+      "name": "Alex Kim",
+      "age": "22",
+      "university": "Select your university",
+      "hobby": "Photography, Reading, Gaming...",
+      "mbti": "Select MBTI",
+      "language": "Korean, English, Japanese..."
+    },
+    "validation": {
+      "emailRequired": "Email is required",
+      "passwordRequired": "Password is required",
+      "nameRequired": "Name is required",
+      "ageRequired": "Age is required",
+      "universityRequired": "University is required",
+      "invalidCredentials": "Invalid email or password"
+    }
+  },
+  "dashboard": {
+    "welcome": "Welcome back",
+    "stats": {
+      "attended": "Events Attended",
+      "interested": "Events Interested",
+      "friends": "Friends",
+      "chats": "Group Chats"
+    },
+    "host": {
+      "title": "Host an Event",
+      "subtitle": "Create and organize your own event",
+      "button": "Create Event"
+    },
+    "sections": {
+      "recent": "Recent Activity",
+      "upcoming": "Upcoming Events",
+      "friends": "Friends",
+      "messages": "Messages"
+    },
+    "messages": {
+      "new": "New Message",
+      "send": "Send",
+      "placeholder": "Type your message...",
+      "online": "Online",
+      "offline": "Offline"
+    },
+    "activity": {
+      "joined": "joined",
+      "interested": "showed interest in",
+      "created": "created",
+      "rated": "rated"
+    }
+  },
+  "events": {
+    "title": "Events",
+    "search": "Search events...",
+    "create": "Create Event",
+    "mapInstructions": "Click markers to view event details",
+    "viewMode": {
+      "map": "Map View",
+      "list": "List View"
+    },
+    "filters": {
+      "all": "All Categories",
+      "academic": "Academic",
+      "cultural": "Cultural",
+      "club": "Club",
+      "language": "Language",
+      "sports": "Sports",
+      "social": "Social"
+    },
+    "details": {
+      "date": "Date",
+      "time": "Time",
+      "location": "Location",
+      "attendees": "Attendees",
+      "fee": "Fee",
+      "interested": "Interested",
+      "tags": "Tags",
+      "organizer": "Organizer",
+      "description": "Description"
+    },
+    "actions": {
+      "join": "Join Event",
+      "joined": "Joined",
+      "full": "Event Full",
+      "like": "Like",
+      "chat": "Chat",
+      "share": "Share",
+      "report": "Report"
+    },
+    "status": {
+      "upcoming": "Upcoming",
+      "ongoing": "Ongoing",
+      "past": "Past",
+      "cancelled": "Cancelled"
+    },
+    "create": {
+      "title": "Create New Event",
+      "fields": {
+        "title": "Event Title",
+        "description": "Description",
+        "category": "Category",
+        "date": "Date",
+        "time": "Time",
+        "location": "Location",
+        "maxAttendees": "Maximum Attendees",
+        "price": "Price",
+        "tags": "Tags"
+      },
+      "placeholders": {
+        "title": "Enter event title",
+        "description": "Describe your event",
+        "location": "Enter event location",
+        "maxAttendees": "Enter maximum number of attendees",
+        "price": "Enter price (0 for free)",
+        "tags": "Add tags separated by commas"
+      },
+      "buttons": {
+        "create": "Create Event",
+        "cancel": "Cancel"
+      }
+    }
+  },
+  "newsletter": {
+    "title": "Event Newsletter",
+    "subtitle": "Discover the best events happening this month",
+    "sections": {
+      "top": "Top Rated Events",
+      "trending": "Most Anticipated",
+      "recent": "Recently Added",
+      "upcoming": "Upcoming This Week"
+    },
+    "subscribe": {
+      "title": "Stay Updated",
+      "subtitle": "Get weekly updates about the best events",
+      "button": "Subscribe",
+      "placeholder": "Enter your email"
+    }
+  },
+  "reviews": {
+    "title": "Reviews & Ratings",
+    "average": "Average Rating",
+    "total": "reviews",
+    "writeReview": "Write a Review",
+    "rateEvent": "Rate Event",
+    "yourRating": "Your Rating",
+    "comment": "Comment",
+    "commentPlaceholder": "Share your experience...",
+    "submit": "Submit Review",
+    "cancel": "Cancel",
+    "helpful": "Helpful",
+    "notHelpful": "Not Helpful"
+  },
+  "chat": {
+    "title": "Group Chat",
+    "members": "members",
+    "online": "online",
+    "typing": "is typing...",
+    "sendMessage": "Send message",
+    "messagePlaceholder": "Type your message...",
+    "send": "Send",
+    "leave": "Leave Chat",
+    "mute": "Mute",
+    "unmute": "Unmute"
+  },
+  "profile": {
+    "title": "Profile",
+    "edit": "Edit Profile",
+    "save": "Save Changes",
+    "cancel": "Cancel",
+    "settings": "Settings",
+    "preferences": "Preferences",
+    "privacy": "Privacy",
+    "notifications": "Notifications"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Something went wrong",
+    "success": "Success",
+    "save": "Save",
+    "cancel": "Cancel",
+    "close": "Close",
+    "delete": "Delete",
+    "edit": "Edit",
+    "view": "View",
+    "share": "Share",
+    "copy": "Copy",
+    "copied": "Copied!",
+    "free": "Free",
+    "paid": "Paid",
+    "yes": "Yes",
+    "no": "No",
+    "confirm": "Confirm",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "search": "Search",
+    "filter": "Filter",
+    "sort": "Sort",
+    "clear": "Clear",
+    "apply": "Apply",
+    "reset": "Reset",
+    "more": "More",
+    "less": "Less",
+    "showMore": "Show More",
+    "showLess": "Show Less",
+    "noResults": "No results found",
+    "tryAgain": "Try again",
+    "refresh": "Refresh",
+    "event": "event",
+    "events": "events"
+  },
+  "time": {
+    "now": "now",
+    "minute": "minute",
+    "minutes": "minutes",
+    "hour": "hour",
+    "hours": "hours",
+    "day": "day",
+    "days": "days",
+    "week": "week",
+    "weeks": "weeks",
+    "month": "month",
+    "months": "months",
+    "year": "year",
+    "years": "years",
+    "ago": "ago",
+    "in": "in"
+  },
+  "categories": {
+    "academic": "Academic",
+    "cultural": "Cultural",
+    "club": "Club Event",
+    "language": "Language Exchange",
+    "sports": "Sports",
+    "social": "Social"
+  },
+  "universities": {
+    "snu": "Seoul National University",
+    "yonsei": "Yonsei University",
+    "korea": "Korea University",
+    "hanyang": "Hanyang University",
+    "ewha": "Ewha Womans University",
+    "sogang": "Sogang University",
+    "hongik": "Hongik University",
+    "konkuk": "Konkuk University"
+  }
+}
