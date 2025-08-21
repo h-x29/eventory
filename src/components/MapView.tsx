@@ -30,6 +30,7 @@ const MapView: React.FC<MapViewProps> = ({
   const mapRef = useRef<any>(null)
   const markersRef = useRef<any[]>([])
   const overlaysRef = useRef<any[]>([])
+  currentInfowindowRef = useRef<any>(null) // Ref for the currently open InfoWindow
   const [isMapLoaded, setIsMapLoaded] = useState(false)
   const [mapError, setMapError] = useState<string | null>(null)
   const [showEventModal, setShowEventModal] = useState(false)
@@ -188,85 +189,56 @@ const MapView: React.FC<MapViewProps> = ({
     })
     overlaysRef.current = []
 
-    // Clear existing markers
-    markersRef.current.forEach(marker => {
-      if (marker && marker.setMap) {
-        marker.setMap(null)
-      }
-    })
-    markersRef.current = []
-
     events.forEach((event, index) => {
       if (!event.coordinates) {
         console.log('⚠️ Event missing coordinates:', event.title)
         return
       }
 
-      const position = new window.kakao.maps.LatLng(
-        event.coordinates.lat, 
-        event.coordinates.lng
-      )
-
       try {
-        const color = getCategoryColor(event.category)
-        
-        // Create custom overlay with HTML content
-        const overlayContent = document.createElement('div')
-        overlayContent.className = 'custom-marker'
-        overlayContent.style.cssText = `
-          width: 24px;
-          height: 24px;
-          background-color: ${color};
-          border: 3px solid white;
-          border-radius: 50%;
-          cursor: pointer;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-          position: relative;
-          z-index: ${1000 + index};
-          transition: all 0.2s ease;
-        `
-        
-        // Add hover effect
-        overlayContent.addEventListener('mouseenter', () => {
-          overlayContent.style.transform = 'scale(1.2)'
-          overlayContent.style.boxShadow = '0 4px 12px rgba(0,0,0,0.4)'
-        })
-        
-        overlayContent.addEventListener('mouseleave', () => {
-          overlayContent.style.transform = 'scale(1)'
-          overlayContent.style.boxShadow = '0 2px 8px rgba(0,0,0,0.3)'
-        })
+        const markerPosition = new window.kakao.maps.LatLng(
+ event.coordinates.lat,
+ event.coordinates.lng
+ )
 
-        // Click handler
-        overlayContent.addEventListener('click', (e) => {
-          e.preventDefault()
-          e.stopPropagation()
-          
-          console.log('🎯 Marker clicked:', event.title)
-          
-          const currentEvent = events.find(e => e.id === event.id) || event
-          setModalEvent(currentEvent)
-          setShowEventModal(true)
-          onEventSelect(currentEvent)
-          
-          // Center map on event
-          mapRef.current.panTo(position)
-          setTimeout(() => {
-            mapRef.current.setLevel(6)
-          }, 300)
-        })
+        const div = document.createElement('div')
+ div.innerHTML = `
+              <div style="
+ cursor: pointer;
+ width: 60px;
+                height: 60px;
+                border-radius: 50%;
+                background-color: ${getCategoryColor(event.category)};
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                color: white;
+                font-weight: bold;
+                font-size: 12px;
+                border: 2px solid white;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+              ">
+                ${event.title.substring(0, 5)}...
+              </div>
+            `
 
-        // Create custom overlay
+        const overlayContent = div
+
         const customOverlay = new window.kakao.maps.CustomOverlay({
-          position: position,
+          position: markerPosition,
           content: overlayContent,
-          xAnchor: 0.5,
-          yAnchor: 0.5,
-          zIndex: 1000 + index
-        })
+          yAnchor: 1
+        });
 
         customOverlay.setMap(mapRef.current)
         overlaysRef.current.push(customOverlay)
+
+        overlayContent.addEventListener('click', () => {
+          console.log('🎯 Marker clicked:', event)
+          // TODO: Show event details on map click
+          onEventSelect(event)
+        })
 
         console.log(`✅ Marker created for: ${event.title}`)
 
