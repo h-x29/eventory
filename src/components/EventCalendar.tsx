@@ -18,6 +18,7 @@ const EventCalendar: React.FC<EventCalendarProps> = ({ onEventClick }) => {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date())
   const [view, setView] = useState<'calendar' | 'list'>('calendar')
 
+  // FIXED: Real-time updates when joined events change
   useEffect(() => {
     console.log('EventCalendar - User:', user?.name)
     console.log('EventCalendar - Joined events count:', joinedEvents.length)
@@ -77,7 +78,7 @@ const EventCalendar: React.FC<EventCalendarProps> = ({ onEventClick }) => {
     return hasEventsResult
   }
 
-  // Custom tile content to show event indicators
+  // FIXED: Custom tile content to show event indicators with better visibility
   const tileContent = ({ date, view }: { date: Date; view: string }) => {
     if (view === 'month' && hasEvents(date)) {
       const dayEvents = getEventsForDate(date)
@@ -212,6 +213,12 @@ const EventCalendar: React.FC<EventCalendarProps> = ({ onEventClick }) => {
                       <MapPin className="w-3 h-3" />
                       <span>{event.location}</span>
                     </div>
+                    {/* FIXED: Show attendance status */}
+                    <div className="mt-2 flex items-center justify-between">
+                      <span className="text-xs text-green-700 bg-green-100 px-2 py-1 rounded-full font-medium">
+                        ✅ {t('dashboard.calendar.joined')}
+                      </span>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -257,7 +264,7 @@ const EventCalendar: React.FC<EventCalendarProps> = ({ onEventClick }) => {
                     </div>
                   </div>
                   <div className="px-3 py-1 bg-green-100 text-green-800 text-xs rounded-full font-medium">
-                    {t('dashboard.calendar.joined')}
+                    ✅ {t('dashboard.calendar.joined')}
                   </div>
                 </div>
               ))}
@@ -303,6 +310,7 @@ const EventCalendar: React.FC<EventCalendarProps> = ({ onEventClick }) => {
         
         .calendar-container :global(.react-calendar__tile.has-events) {
           font-weight: 600;
+          background-color: #eff6ff;
         }
         
         .calendar-container :global(.react-calendar__navigation) {

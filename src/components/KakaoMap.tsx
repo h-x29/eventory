@@ -15,7 +15,7 @@ interface KakaoMapProps {
 }
 
 const KakaoMap: React.FC<KakaoMapProps> = ({ events, onEventClick, selectedCategory }) => {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const mapContainer = useRef<HTMLDivElement>(null)
   const [map, setMap] = useState<any>(null)
   const [markers, setMarkers] = useState<any[]>([])
@@ -28,6 +28,51 @@ const KakaoMap: React.FC<KakaoMapProps> = ({ events, onEventClick, selectedCateg
     language: '#F59E0B',    // Orange
     sports: '#EF4444',      // Red
     social: '#EC4899'       // Pink
+  }
+
+  // Get localized content for event
+  const getLocalizedEventContent = (event: Event) => {
+    const isKorean = i18n.language === 'ko'
+    return {
+      title: isKorean ? (event.title || event.titleEn) : (event.titleEn || event.title),
+      location: isKorean ? (event.location || event.locationEn) : (event.locationEn || event.location),
+      organizer: isKorean ? (event.organizer || event.organizerEn) : (event.organizerEn || event.organizer)
+    }
+  }
+
+  // Format date based on language
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString)
+    if (i18n.language === 'ko') {
+      return date.toLocaleDateString('ko-KR', {
+        month: 'long',
+        day: 'numeric'
+      })
+    }
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric'
+    })
+  }
+
+  // Format time based on language
+  const formatTime = (timeString: string) => {
+    const [hours, minutes] = timeString.split(':')
+    const date = new Date()
+    date.setHours(parseInt(hours), parseInt(minutes))
+    
+    if (i18n.language === 'ko') {
+      return date.toLocaleTimeString('ko-KR', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      })
+    }
+    return date.toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    })
   }
 
   useEffect(() => {
@@ -69,8 +114,11 @@ const KakaoMap: React.FC<KakaoMapProps> = ({ events, onEventClick, selectedCateg
 
     // Clear existing markers
     markers.forEach(marker => {
-      if (marker.infoWindow) {
-        marker.infoWindow.close()
+      if (marker.hoverInfoWindow) {
+        marker.hoverInfoWindow.close()
+      }
+      if (marker.clickInfoWindow) {
+        marker.clickInfoWindow.close()
       }
       marker.setMap(null)
     })
@@ -83,6 +131,9 @@ const KakaoMap: React.FC<KakaoMapProps> = ({ events, onEventClick, selectedCateg
         event.coordinates.lat,
         event.coordinates.lng
       )
+
+      // Get localized content
+      const localizedContent = getLocalizedEventContent(event)
 
       // Create custom marker with category color
       const markerImageSrc = `data:image/svg+xml;base64,${btoa(`
@@ -108,86 +159,206 @@ const KakaoMap: React.FC<KakaoMapProps> = ({ events, onEventClick, selectedCateg
 
       marker.setMap(map)
 
-      // Create info window
-      const infoWindowContent = `
-        <div style="padding: 12px; min-width: 200px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-          <div style="font-weight: 600; font-size: 14px; margin-bottom: 4px; color: #1F2937;">
-            ${event.title}
+      // Create hover tooltip with basic info
+      const hoverTooltipContent = `
+        <div style="
+          padding: 8px 12px; 
+          min-width: 180px; 
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+          background: white;
+          border-radius: 8px;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+          border: 1px solid #e5e7eb;
+        ">
+          <div style="font-weight: 600; font-size: 13px; margin-bottom: 4px; color: #1F2937; line-height: 1.3;">
+            ${localizedContent.title}
           </div>
-          <div style="font-size: 12px; color: #6B7280; margin-bottom: 8px;">
-            📍 ${event.location}
+          <div style="font-size: 11px; color: #6B7280; margin-bottom: 2px; display: flex; align-items: center;">
+            📍 ${localizedContent.location}
           </div>
-          <div style="font-size: 12px; color: #6B7280; margin-bottom: 8px;">
-            📅 ${event.date} ${event.time}
+          <div style="font-size: 11px; color: #6B7280; margin-bottom: 6px; display: flex; align-items: center;">
+            📅 ${formatDate(event.date)} ${formatTime(event.time)}
           </div>
-          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-            <span style="background: ${categoryColors[event.category as keyof typeof categoryColors] || '#6B7280'}; color: white; padding: 2px 8px; border-radius: 12px; font-size: 10px; font-weight: 500;">
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <span style="
+              background: ${categoryColors[event.category as keyof typeof categoryColors] || '#6B7280'}; 
+              color: white; 
+              padding: 2px 6px; 
+              border-radius: 10px; 
+              font-size: 9px; 
+              font-weight: 500;
+            ">
               ${t(`categories.${event.category}`)}
             </span>
-            <span style="font-size: 12px; color: #6B7280;">
+            <span style="font-size: 10px; color: #6B7280;">
               👥 ${event.attendees}/${event.maxAttendees || '∞'}
             </span>
           </div>
+          <div style="
+            margin-top: 6px; 
+            padding-top: 6px; 
+            border-top: 1px solid #f3f4f6; 
+            font-size: 9px; 
+            color: #9CA3AF; 
+            text-align: center;
+          ">
+            ${t('events.mapTooltip.clickForDetails')}
+          </div>
+        </div>
+      `
+
+      const hoverInfoWindow = new window.kakao.maps.InfoWindow({
+        content: hoverTooltipContent,
+        removable: false
+      })
+
+      // FIXED: Create click info window with detailed event info and action button
+      const clickInfoContent = `
+        <div style="
+          padding: 16px; 
+          min-width: 280px; 
+          max-width: 320px;
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+          background: white;
+          border-radius: 12px;
+          box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+          border: 1px solid #e5e7eb;
+        ">
+          <div style="margin-bottom: 12px;">
+            <div style="font-weight: 700; font-size: 16px; margin-bottom: 6px; color: #1F2937; line-height: 1.3;">
+              ${localizedContent.title}
+            </div>
+            <div style="font-size: 13px; color: #6B7280; line-height: 1.4; margin-bottom: 8px;">
+              ${event.description.substring(0, 100)}${event.description.length > 100 ? '...' : ''}
+            </div>
+          </div>
+          
+          <div style="margin-bottom: 12px;">
+            <div style="font-size: 12px; color: #6B7280; margin-bottom: 4px; display: flex; align-items: center;">
+              📍 ${localizedContent.location}
+            </div>
+            <div style="font-size: 12px; color: #6B7280; margin-bottom: 4px; display: flex; align-items: center;">
+              📅 ${formatDate(event.date)} ${formatTime(event.time)}
+            </div>
+            <div style="font-size: 12px; color: #6B7280; margin-bottom: 4px; display: flex; align-items: center;">
+              👤 ${localizedContent.organizer}
+            </div>
+            <div style="font-size: 12px; color: #6B7280; margin-bottom: 8px; display: flex; align-items: center;">
+              👥 ${event.attendees}/${event.maxAttendees || '∞'} ${t('events.details.attendees')}
+            </div>
+          </div>
+
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+            <span style="
+              background: ${categoryColors[event.category as keyof typeof categoryColors] || '#6B7280'}; 
+              color: white; 
+              padding: 4px 8px; 
+              border-radius: 12px; 
+              font-size: 11px; 
+              font-weight: 600;
+            ">
+              ${t(`categories.${event.category}`)}
+            </span>
+            <span style="font-size: 12px; color: #6B7280;">
+              💰 ${event.price === 0 ? t('common.free') : `₩${event.price.toLocaleString()}`}
+            </span>
+          </div>
+
           <button 
-            onclick="window.selectEvent('${event.id}')"
-            style="background: #3B82F6; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; width: 100%; transition: background-color 0.2s;"
+            onclick="window.openEventDetails('${event.id}')"
+            style="
+              width: 100%;
+              background: #3B82F6;
+              color: white;
+              border: none;
+              padding: 10px 16px;
+              border-radius: 8px;
+              font-size: 13px;
+              font-weight: 600;
+              cursor: pointer;
+              transition: background-color 0.2s;
+            "
             onmouseover="this.style.backgroundColor='#2563EB'"
             onmouseout="this.style.backgroundColor='#3B82F6'"
           >
-            ${t('common.view')}
+            ${t('events.actions.viewDetails')}
           </button>
         </div>
       `
 
-      const infoWindow = new window.kakao.maps.InfoWindow({
-        content: infoWindowContent
+      const clickInfoWindow = new window.kakao.maps.InfoWindow({
+        content: clickInfoContent,
+        removable: true
       })
 
-      // Add click event to marker - opens event details modal
-      window.kakao.maps.event.addListener(marker, 'click', () => {
-        // Close all other info windows first
-        markers.forEach(m => {
-          if (m.infoWindow) {
-            m.infoWindow.close()
-          }
-        })
-        
-        // Open info window
-        infoWindow.open(map, marker)
-        
-        // Also trigger event details modal
-        onEventClick(event)
-      })
-
-      // Add hover effect to marker
+      // Add hover events for tooltip
       window.kakao.maps.event.addListener(marker, 'mouseover', () => {
-        // Close all other info windows
+        // Close all other hover tooltips
         markers.forEach(m => {
-          if (m.infoWindow) {
-            m.infoWindow.close()
+          if (m.hoverInfoWindow) {
+            m.hoverInfoWindow.close()
           }
         })
-        infoWindow.open(map, marker)
+        hoverInfoWindow.open(map, marker)
       })
 
-      marker.infoWindow = infoWindow
+      window.kakao.maps.event.addListener(marker, 'mouseout', () => {
+        hoverInfoWindow.close()
+      })
+
+      // FIXED: Add click event to marker - shows detailed info window
+      window.kakao.maps.event.addListener(marker, 'click', () => {
+        // Close hover tooltip
+        hoverInfoWindow.close()
+        
+        // Close all other click info windows
+        markers.forEach(m => {
+          if (m.clickInfoWindow) {
+            m.clickInfoWindow.close()
+          }
+        })
+        
+        // Open detailed info window
+        clickInfoWindow.open(map, marker)
+        
+        console.log('Marker clicked for event:', event.title)
+      })
+
+      // Store references to info windows
+      marker.hoverInfoWindow = hoverInfoWindow
+      marker.clickInfoWindow = clickInfoWindow
+      
       return marker
     }).filter(Boolean)
 
     setMarkers(newMarkers)
 
-    // Global function to select event from info window
-    window.selectEvent = (eventId: string) => {
+    // FIXED: Add global function to handle event details opening
+    window.openEventDetails = (eventId: string) => {
       const event = events.find(e => e.id === eventId)
       if (event) {
+        console.log('Opening event details for:', event.title)
         onEventClick(event)
       }
     }
 
     return () => {
-      window.selectEvent = undefined
+      // Cleanup
+      newMarkers.forEach(marker => {
+        if (marker && marker.hoverInfoWindow) {
+          marker.hoverInfoWindow.close()
+        }
+        if (marker && marker.clickInfoWindow) {
+          marker.clickInfoWindow.close()
+        }
+      })
+      
+      // Clean up global function
+      if (window.openEventDetails) {
+        delete window.openEventDetails
+      }
     }
-  }, [map, events, onEventClick, t])
+  }, [map, events, onEventClick, t, i18n.language])
 
   return (
     <div className="relative">
@@ -200,7 +371,7 @@ const KakaoMap: React.FC<KakaoMapProps> = ({ events, onEventClick, selectedCateg
       
       {/* Map Legend */}
       <div className="absolute top-4 left-4 bg-white rounded-lg shadow-lg p-4 max-w-xs">
-        <h3 className="font-semibold text-sm text-gray-900 mb-3">{t('events.filters.all')}</h3>
+        <h3 className="font-semibold text-sm text-gray-900 mb-3">{t('events.mapLegend.title')}</h3>
         <div className="space-y-2">
           {Object.entries(categoryColors).map(([category, color]) => (
             <div key={category} className="flex items-center gap-2 text-xs">

@@ -1,8 +1,9 @@
-import React, { useState } from 'react'
+import React, { useState, useCallback, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { X, Calendar, MapPin, Users, Clock, Heart, MessageCircle, Star, DollarSign, Tag } from 'lucide-react'
 import { Event, EventRating } from '../types/Event'
 import { useAuth } from '../contexts/AuthContext'
+import { useEvents } from '../contexts/EventContext'
 import RatingModal from './RatingModal'
 
 interface EventModalProps {
@@ -22,7 +23,12 @@ const EventModal: React.FC<EventModalProps> = ({
 }) => {
   const { user } = useAuth()
   const { t, i18n } = useTranslation()
+  const { isEventJoined, events } = useEvents()
   const [showRatingModal, setShowRatingModal] = useState(false)
+  const [isProcessing, setIsProcessing] = useState(false)
+
+  // FIXED: Get current event data from context to ensure real-time updates
+  const currentEvent = events.find(e => e.id === event.id) || event
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
@@ -61,10 +67,68 @@ const EventModal: React.FC<EventModalProps> = ({
     })
   }
 
-  const isEventFull = event.attendees >= event.maxAttendees
-  const isUserInterested = user && event.interestedUsers.includes(user.name)
-  const isPastEvent = new Date(event.date) < new Date()
-  const canRate = isPastEvent && event.isAttending && user
+  // FIXED: Check if user is attending this event using real-time data
+  const isUserAttending = isEventJoined(currentEvent.id)
+  const isEventFull = currentEvent.attendees >= currentEvent.maxAttendees
+  const isUserInterested = user && currentEvent.interestedUsers.includes(user.name)
+  const isPastEvent = new Date(currentEvent.date) < new Date()
+  const canRate = isPastEvent && isUserAttending && user
+
+  // FIXED: Handle attendance toggle with proper state management
+  const handleToggleAttendance = useCallback(async (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    
+    if (isProcessing || !user) return
+    
+    setIsProcessing(true)
+    
+    try {
+      console.log('Toggling attendance for event:', currentEvent.id, 'Current status:', isUserAttending)
+      
+      // Call the parent handler which updates the context
+      onToggleAttendance(currentEvent.id)
+      
+      // Show feedback to user
+      const message = isUserAttending 
+        ? t('events.feedback.leftEvent') || 'You have left the event'
+        : t('events.feedback.joinedEvent') || 'You have joined the event!'
+      
+      // Small delay to show the processing state
+      await new Promise(resolve => setTimeout(resolve, 300))
+      
+      console.log(message)
+      
+    } catch (error) {
+      console.error('Error toggling attendance:', error)
+    } finally {
+      setIsProcessing(false)
+    }
+  }, [currentEvent.id, onToggleAttendance, user, isProcessing, isUserAttending, t])
+
+  const handleToggleInterest = useCallback(async (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    
+    if (isProcessing || !user) return
+    
+    setIsProcessing(true)
+    
+    try {
+      await new Promise(resolve => setTimeout(resolve, 100)) // Prevent rapid clicks
+      onToggleInterest(currentEvent.id)
+    } catch (error) {
+      console.error('Error toggling interest:', error)
+    } finally {
+      setIsProcessing(false)
+    }
+  }, [currentEvent.id, onToggleInterest, user, isProcessing])
+
+  const handleOpenGroupChat = useCallback((e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    onOpenGroupChat(currentEvent)
+  }, [currentEvent, onOpenGroupChat])
 
   const handleSubmitRating = (rating: number, comment: string) => {
     if (!user) return
@@ -80,19 +144,19 @@ const EventModal: React.FC<EventModalProps> = ({
     setShowRatingModal(false)
   }
 
-  const averageRating = event.ratings.length > 0 
-    ? event.ratings.reduce((sum, rating) => sum + rating.rating, 0) / event.ratings.length 
+  const averageRating = currentEvent.ratings.length > 0 
+    ? currentEvent.ratings.reduce((sum, rating) => sum + rating.rating, 0) / currentEvent.ratings.length 
     : 0
 
-  // Get localized content based on current language
+  // FIXED: Get localized content based on current language
   const getLocalizedContent = () => {
     const isKorean = i18n.language === 'ko'
     return {
-      title: isKorean ? event.title : event.titleEn,
-      description: isKorean ? event.description : event.descriptionEn,
-      location: isKorean ? event.location : event.locationEn,
-      organizer: isKorean ? event.organizer : event.organizerEn,
-      tags: isKorean ? event.tags : event.tagsEn
+      title: isKorean ? (currentEvent.title || currentEvent.titleEn) : (currentEvent.titleEn || currentEvent.title),
+      description: isKorean ? (currentEvent.description || currentEvent.descriptionEn) : (currentEvent.descriptionEn || currentEvent.description),
+      location: isKorean ? (currentEvent.location || currentEvent.locationEn) : (currentEvent.locationEn || currentEvent.location),
+      organizer: isKorean ? (currentEvent.organizer || currentEvent.organizerEn) : (currentEvent.organizerEn || currentEvent.organizer),
+      tags: isKorean ? (currentEvent.tags || currentEvent.tagsEn) : (currentEvent.tagsEn || currentEvent.tags)
     }
   }
 
@@ -105,7 +169,7 @@ const EventModal: React.FC<EventModalProps> = ({
           {/* Header with Event Image */}
           <div className="relative">
             <img
-              src={event.image}
+              src={currentEvent.image}
               alt={localizedContent.title}
               className="w-full h-64 object-cover rounded-t-2xl"
             />
@@ -117,7 +181,7 @@ const EventModal: React.FC<EventModalProps> = ({
             </button>
             <div className="absolute bottom-4 left-4">
               <span className="bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-medium">
-                {t(`categories.${event.category}`)}
+                {t(`categories.${currentEvent.category}`)}
               </span>
             </div>
           </div>
@@ -137,7 +201,7 @@ const EventModal: React.FC<EventModalProps> = ({
                 <Calendar className="w-5 h-5 text-blue-600" />
                 <div>
                   <p className="text-sm text-gray-600">{t('events.details.date')}</p>
-                  <p className="font-medium text-gray-900">{formatDate(event.date)}</p>
+                  <p className="font-medium text-gray-900">{formatDate(currentEvent.date)}</p>
                 </div>
               </div>
 
@@ -146,7 +210,7 @@ const EventModal: React.FC<EventModalProps> = ({
                 <Clock className="w-5 h-5 text-blue-600" />
                 <div>
                   <p className="text-sm text-gray-600">{t('events.details.time')}</p>
-                  <p className="font-medium text-gray-900">{formatTime(event.time)}</p>
+                  <p className="font-medium text-gray-900">{formatTime(currentEvent.time)}</p>
                 </div>
               </div>
 
@@ -159,13 +223,13 @@ const EventModal: React.FC<EventModalProps> = ({
                 </div>
               </div>
 
-              {/* Attendees */}
+              {/* FIXED: Attendees with real-time count */}
               <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
                 <Users className="w-5 h-5 text-blue-600" />
                 <div>
                   <p className="text-sm text-gray-600">{t('events.details.attendees')}</p>
                   <p className="font-medium text-gray-900">
-                    {event.attendees}/{event.maxAttendees}
+                    {currentEvent.attendees}/{currentEvent.maxAttendees}
                     {isEventFull && (
                       <span className="ml-2 text-red-600 text-sm">({t('events.actions.full')})</span>
                     )}
@@ -179,7 +243,7 @@ const EventModal: React.FC<EventModalProps> = ({
                 <div>
                   <p className="text-sm text-gray-600">{t('events.details.fee')}</p>
                   <p className="font-medium text-gray-900">
-                    {event.price === 0 ? t('common.free') : `₩${event.price.toLocaleString()}`}
+                    {currentEvent.price === 0 ? t('common.free') : `₩${currentEvent.price.toLocaleString()}`}
                   </p>
                 </div>
               </div>
@@ -190,7 +254,7 @@ const EventModal: React.FC<EventModalProps> = ({
                 <div>
                   <p className="text-sm text-gray-600">{t('events.details.interested')}</p>
                   <p className="font-medium text-gray-900">
-                    {event.interestedUsers.length} {i18n.language === 'ko' ? '명' : 'people'}
+                    {currentEvent.interestedUsers.length} {i18n.language === 'ko' ? '명' : 'people'}
                   </p>
                 </div>
               </div>
@@ -227,7 +291,7 @@ const EventModal: React.FC<EventModalProps> = ({
             )}
 
             {/* Past Event Reviews and Ratings */}
-            {isPastEvent && event.ratings.length > 0 && (
+            {isPastEvent && currentEvent.ratings.length > 0 && (
               <div className="mb-6">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-semibold text-gray-900">
@@ -245,13 +309,13 @@ const EventModal: React.FC<EventModalProps> = ({
                       ))}
                     </div>
                     <span className="text-sm text-gray-600">
-                      {averageRating.toFixed(1)} ({event.ratings.length} {t('reviews.total')})
+                      {averageRating.toFixed(1)} ({currentEvent.ratings.length} {t('reviews.total')})
                     </span>
                   </div>
                 </div>
 
                 <div className="space-y-4 max-h-60 overflow-y-auto">
-                  {event.ratings.map((rating, index) => (
+                  {currentEvent.ratings.map((rating, index) => (
                     <div key={index} className="bg-gray-50 rounded-lg p-4">
                       <div className="flex items-center justify-between mb-2">
                         <span className="font-medium text-gray-900">{rating.userId}</span>
@@ -278,25 +342,30 @@ const EventModal: React.FC<EventModalProps> = ({
               </div>
             )}
 
-            {/* Action Buttons */}
+            {/* FIXED: Action Buttons with proper state management */}
             <div className="flex gap-3">
-              {/* Join Button */}
+              {/* Join/Leave Button */}
               {!isPastEvent && (
                 <button
-                  onClick={() => onToggleAttendance(event.id)}
-                  disabled={!user || (isEventFull && !event.isAttending)}
-                  className={`flex-1 py-3 px-6 rounded-lg font-medium transition-colors ${
-                    event.isAttending
-                      ? 'bg-green-600 text-white hover:bg-green-700'
+                  onClick={handleToggleAttendance}
+                  disabled={!user || (isEventFull && !isUserAttending) || isProcessing}
+                  className={`flex-1 py-3 px-6 rounded-lg font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${
+                    isUserAttending
+                      ? 'bg-red-600 text-white hover:bg-red-700 shadow-sm'
                       : isEventFull
                       ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                      : 'bg-blue-600 text-white hover:bg-blue-700'
+                      : 'bg-blue-600 text-white hover:bg-blue-700 shadow-sm'
                   }`}
                 >
-                  {!user 
+                  {isProcessing ? (
+                    <span className="flex items-center justify-center">
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                      {t('common.processing')}
+                    </span>
+                  ) : !user 
                     ? t('nav.login')
-                    : event.isAttending 
-                    ? t('events.actions.joined')
+                    : isUserAttending 
+                    ? t('events.actions.leave') || 'Leave Event'
                     : isEventFull 
                     ? t('events.actions.full')
                     : t('events.actions.join')
@@ -316,9 +385,9 @@ const EventModal: React.FC<EventModalProps> = ({
               
               {/* Like Button */}
               <button
-                onClick={() => onToggleInterest(event.id)}
-                disabled={!user}
-                className={`px-4 py-3 rounded-lg font-medium transition-colors ${
+                onClick={handleToggleInterest}
+                disabled={!user || isProcessing}
+                className={`px-4 py-3 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
                   isUserInterested
                     ? 'bg-red-100 text-red-700 hover:bg-red-200'
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -327,16 +396,42 @@ const EventModal: React.FC<EventModalProps> = ({
                 <Heart className={`w-5 h-5 ${isUserInterested ? 'fill-current' : ''}`} />
               </button>
               
-              {/* Chat Button */}
-              {event.isAttending && (
+              {/* Chat Button - Only for attending users */}
+              {isUserAttending && (
                 <button
-                  onClick={() => onOpenGroupChat(event)}
+                  onClick={handleOpenGroupChat}
                   className="px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
                 >
                   <MessageCircle className="w-5 h-5" />
                 </button>
               )}
             </div>
+
+            {/* FIXED: User Status Indicator */}
+            {user && (
+              <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-600">{t('events.details.yourStatus')}:</span>
+                  <div className="flex items-center gap-4">
+                    {isUserAttending && (
+                      <span className="flex items-center gap-1 text-green-700 font-medium">
+                        ✅ {t('events.status.attending')}
+                      </span>
+                    )}
+                    {isUserInterested && (
+                      <span className="flex items-center gap-1 text-red-700 font-medium">
+                        ❤️ {t('events.status.interested')}
+                      </span>
+                    )}
+                    {!isUserAttending && !isUserInterested && (
+                      <span className="text-gray-500">
+                        {t('events.status.notParticipating')}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -344,7 +439,7 @@ const EventModal: React.FC<EventModalProps> = ({
       {/* Rating Modal */}
       {showRatingModal && (
         <RatingModal
-          event={event}
+          event={currentEvent}
           onClose={() => setShowRatingModal(false)}
           onSubmitRating={handleSubmitRating}
         />

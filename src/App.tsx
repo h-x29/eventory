@@ -9,6 +9,7 @@ import NewsletterPage from './pages/NewsletterPage'
 import DashboardPage from './pages/DashboardPage'
 import LoginPage from './pages/LoginPage'
 import SignupPage from './pages/SignupPage'
+import './i18n/config'
 
 function App() {
   return (

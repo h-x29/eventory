@@ -94,6 +94,12 @@ const EventsPage: React.FC = () => {
     setShowGroupChat(true)
   }
 
+  // FIXED: Handle event click from map markers
+  const handleEventClick = (event: Event) => {
+    console.log('Event clicked from map:', event.title)
+    setSelectedEvent(event)
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Navigation />
@@ -108,7 +114,7 @@ const EventsPage: React.FC = () => {
             </p>
           </div>
           
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 w-full sm:w-auto">
             {/* View Mode Toggle */}
             <div className="flex bg-gray-100 rounded-lg p-1">
               <button
@@ -120,7 +126,7 @@ const EventsPage: React.FC = () => {
                 }`}
               >
                 <List className="w-4 h-4" />
-                {t('events.viewMode.list')}
+                <span className="hidden sm:inline">{t('events.viewMode.list')}</span>
               </button>
               <button
                 onClick={() => setViewMode('map')}
@@ -131,18 +137,19 @@ const EventsPage: React.FC = () => {
                 }`}
               >
                 <Map className="w-4 h-4" />
-                {t('events.viewMode.map')}
+                <span className="hidden sm:inline">{t('events.viewMode.map')}</span>
               </button>
             </div>
 
-            {/* Create Event Button */}
+            {/* FIXED: Create Event Button - Always visible when user is logged in */}
             {user && (
               <button
                 onClick={() => setShowCreateEvent(true)}
-                className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-sm flex-shrink-0"
               >
                 <Plus className="w-5 h-5" />
                 <span className="hidden sm:inline">{t('events.create')}</span>
+                <span className="sm:hidden">Create</span>
               </button>
             )}
           </div>
@@ -188,7 +195,7 @@ const EventsPage: React.FC = () => {
               <EventCard
                 key={event.id}
                 event={event}
-                onEventClick={setSelectedEvent}
+                onEventClick={handleEventClick}
                 onToggleAttendance={handleToggleAttendance}
                 onToggleInterest={handleToggleInterest}
                 isJoined={isEventJoined(event.id)}
@@ -200,7 +207,7 @@ const EventsPage: React.FC = () => {
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
             <KakaoMap
               events={filteredEvents}
-              onEventClick={setSelectedEvent}
+              onEventClick={handleEventClick}
               selectedCategory={selectedCategory}
             />
           </div>

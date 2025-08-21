@@ -81,15 +81,21 @@
       "ageRequired": "Age is required",
       "universityRequired": "University is required",
       "invalidCredentials": "Invalid email or password"
-    }
+    },
+    "loginRequired": "Please login to join events"
   },
   "dashboard": {
     "welcome": "Welcome back",
+    "loginMessage": "Please login to access your dashboard.",
     "stats": {
       "attended": "Events Attended",
       "interested": "Events Interested",
       "friends": "Friends",
-      "chats": "Group Chats"
+      "chats": "Group Chats",
+      "joined": "Joined",
+      "availableToJoin": "Available to Join",
+      "thisMonth": "This Month",
+      "thisWeek": "This Week"
     },
     "host": {
       "title": "Host an Event",
@@ -100,7 +106,17 @@
       "recent": "Recent Activity",
       "upcoming": "Upcoming Events",
       "friends": "Friends",
-      "messages": "Messages"
+      "messages": "Messages",
+      "recentActivity": "Recent Activity",
+      "eventsJoined": "Events Joined",
+      "eventsCanJoin": "Events You Can Join",
+      "yourFriends": "Your Friends",
+      "yourGroupChats": "Your Group Chats",
+      "addFriends": "Add Friends",
+      "message": "Message",
+      "participants": "Participants",
+      "noEventsJoined": "No events joined yet",
+      "joinEventsToSee": "Join events to see them here!"
     },
     "messages": {
       "new": "New Message",
@@ -113,14 +129,64 @@
       "joined": "joined",
       "interested": "showed interest in",
       "created": "created",
-      "rated": "rated"
+      "rated": "rated",
+      "twoHoursAgo": "2 hours ago",
+      "oneDayAgo": "1 day ago",
+      "twoDaysAgo": "2 days ago",
+      "noRecentActivity": "No recent activity",
+      "joinEventsToSeeActivity": "Join events to see activity here!"
+    },
+    "calendar": {
+      "title": "My Event Calendar",
+      "events": "Events",
+      "calendarView": "Calendar",
+      "listView": "List",
+      "noEvents": "No events yet",
+      "noEventsDescription": "Join events to see them in your calendar!",
+      "browseEvents": "Browse Events",
+      "noEventsOnDate": "No events on this date",
+      "upcomingEvents": "Upcoming Events",
+      "joined": "Joined",
+      "noUpcomingEvents": "No upcoming events",
+      "joinedEventsWillAppear": "Joined events will appear here!"
+    },
+    "profile": {
+      "title": "Profile Information",
+      "university": "University",
+      "age": "Age",
+      "yearsOld": "years old",
+      "hobby": "Hobby",
+      "mbti": "MBTI",
+      "languages": "Languages",
+      "editProfile": "Edit Profile",
+      "personality": "Personality",
+      "sendMessage": "Send Message",
+      "addFriend": "Add Friend"
+    },
+    "quickActions": {
+      "title": "Quick Actions",
+      "findFriends": "Find Friends",
+      "joinGroupChats": "Join Group Chats",
+      "browseEvents": "Browse Events"
+    },
+    "groupChats": {
+      "koreanLanguage": "Korean Language Exchange",
+      "photography": "Photography Club",
+      "basketball": "Basketball Meetup",
+      "study": "Study Group"
     }
   },
   "events": {
     "title": "Events",
     "search": "Search events...",
     "create": "Create Event",
-    "mapInstructions": "Click markers to view event details",
+    "mapInstructions": "Hover over markers for quick info, click to view details",
+    "mapLegend": {
+      "title": "Event Categories"
+    },
+    "mapTooltip": {
+      "clickForDetails": "Click for full details"
+    },
     "viewMode": {
       "map": "Map View",
       "list": "List View"
@@ -148,6 +214,7 @@
     "actions": {
       "join": "Join Event",
       "joined": "Joined",
+      "leave": "Leave Event",
       "full": "Event Full",
       "like": "Like",
       "chat": "Chat",
@@ -162,6 +229,7 @@
     },
     "create": {
       "title": "Create New Event",
+      "success": "Event created successfully! 🎉",
       "fields": {
         "title": "Event Title",
         "description": "Description",
@@ -201,7 +269,10 @@
       "subtitle": "Get weekly updates about the best events",
       "button": "Subscribe",
       "placeholder": "Enter your email"
-    }
+    },
+    "noRatedEvents": "No Rated Events Yet",
+    "noRatedEventsDesc": "Past events with ratings will appear here!",
+    "recentlyAdded": "Recently added"
   },
   "reviews": {
     "title": "Reviews & Ratings",
@@ -274,7 +345,10 @@
     "tryAgain": "Try again",
     "refresh": "Refresh",
     "event": "event",
-    "events": "events"
+    "events": "events",
+    "found": "found",
+    "processing": "Processing...",
+    "creating": "Creating..."
   },
   "time": {
     "now": "now",
