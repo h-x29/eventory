@@ -149,7 +149,7 @@ const EventsPage: React.FC = () => {
               >
                 <Plus className="w-5 h-5" />
                 <span className="hidden sm:inline">{t('events.create')}</span>
-                <span className="sm:hidden">Create</span>
+                <span className="sm:hidden">{t('events.create')}</span>
               </button>
             )}
           </div>

@@ -5,6 +5,7 @@ import { Event } from '../types/Event'
 declare global {
   interface Window {
     kakao: any
+    openEventDetails?: (eventId: string) => void
   }
 }
 
@@ -123,6 +124,18 @@ const KakaoMap: React.FC<KakaoMapProps> = ({ events, onEventClick, selectedCateg
       marker.setMap(null)
     })
 
+    // FIXED: Set up global event handler before creating markers
+    window.openEventDetails = (eventId: string) => {
+      console.log('Global openEventDetails called with eventId:', eventId)
+      const event = events.find(e => e.id === eventId)
+      if (event) {
+        console.log('Found event, calling onEventClick:', event.title)
+        onEventClick(event)
+      } else {
+        console.error('Event not found with id:', eventId)
+      }
+    }
+
     // Create new markers for filtered events
     const newMarkers = events.map(event => {
       if (!event.coordinates) return null
@@ -212,85 +225,6 @@ const KakaoMap: React.FC<KakaoMapProps> = ({ events, onEventClick, selectedCateg
         removable: false
       })
 
-      // FIXED: Create click info window with detailed event info and action button
-      const clickInfoContent = `
-        <div style="
-          padding: 16px; 
-          min-width: 280px; 
-          max-width: 320px;
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-          background: white;
-          border-radius: 12px;
-          box-shadow: 0 8px 24px rgba(0,0,0,0.15);
-          border: 1px solid #e5e7eb;
-        ">
-          <div style="margin-bottom: 12px;">
-            <div style="font-weight: 700; font-size: 16px; margin-bottom: 6px; color: #1F2937; line-height: 1.3;">
-              ${localizedContent.title}
-            </div>
-            <div style="font-size: 13px; color: #6B7280; line-height: 1.4; margin-bottom: 8px;">
-              ${event.description.substring(0, 100)}${event.description.length > 100 ? '...' : ''}
-            </div>
-          </div>
-          
-          <div style="margin-bottom: 12px;">
-            <div style="font-size: 12px; color: #6B7280; margin-bottom: 4px; display: flex; align-items: center;">
-              📍 ${localizedContent.location}
-            </div>
-            <div style="font-size: 12px; color: #6B7280; margin-bottom: 4px; display: flex; align-items: center;">
-              📅 ${formatDate(event.date)} ${formatTime(event.time)}
-            </div>
-            <div style="font-size: 12px; color: #6B7280; margin-bottom: 4px; display: flex; align-items: center;">
-              👤 ${localizedContent.organizer}
-            </div>
-            <div style="font-size: 12px; color: #6B7280; margin-bottom: 8px; display: flex; align-items: center;">
-              👥 ${event.attendees}/${event.maxAttendees || '∞'} ${t('events.details.attendees')}
-            </div>
-          </div>
-
-          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
-            <span style="
-              background: ${categoryColors[event.category as keyof typeof categoryColors] || '#6B7280'}; 
-              color: white; 
-              padding: 4px 8px; 
-              border-radius: 12px; 
-              font-size: 11px; 
-              font-weight: 600;
-            ">
-              ${t(`categories.${event.category}`)}
-            </span>
-            <span style="font-size: 12px; color: #6B7280;">
-              💰 ${event.price === 0 ? t('common.free') : `₩${event.price.toLocaleString()}`}
-            </span>
-          </div>
-
-          <button 
-            onclick="window.openEventDetails('${event.id}')"
-            style="
-              width: 100%;
-              background: #3B82F6;
-              color: white;
-              border: none;
-              padding: 10px 16px;
-              border-radius: 8px;
-              font-size: 13px;
-              font-weight: 600;
-              cursor: pointer;
-              transition: background-color 0.2s;
-            "
-            onmouseover="this.style.backgroundColor='#2563EB'"
-            onmouseout="this.style.backgroundColor='#3B82F6'"
-          >
-            ${t('events.actions.viewDetails')}
-          </button>
-        </div>
-      `
-
-      const clickInfoWindow = new window.kakao.maps.InfoWindow({
-        content: clickInfoContent,
-        removable: true
-      })
-
       // Add hover events for tooltip
       window.kakao.maps.event.addListener(marker, 'mouseover', () => {
         // Close all other hover tooltips
@@ -306,41 +240,33 @@ const KakaoMap: React.FC<KakaoMapProps> = ({ events, onEventClick, selectedCateg
         hoverInfoWindow.close()
       })
 
-      // FIXED: Add click event to marker - shows detailed info window
+      // FIXED: Add click event to marker - directly opens event details modal
       window.kakao.maps.event.addListener(marker, 'click', () => {
+        console.log('Marker clicked for event:', event.title, 'ID:', event.id)
+        
         // Close hover tooltip
         hoverInfoWindow.close()
         
-        // Close all other click info windows
+        // Close all other hover tooltips
         markers.forEach(m => {
-          if (m.clickInfoWindow) {
-            m.clickInfoWindow.close()
+          if (m.hoverInfoWindow) {
+            m.hoverInfoWindow.close()
           }
         })
         
-        // Open detailed info window
-        clickInfoWindow.open(map, marker)
+        // FIXED: Directly open event details modal instead of info window
+        onEventClick(event)
         
-        console.log('Marker clicked for event:', event.title)
+        console.log('Event details modal opened for:', event.title)
       })
 
       // Store references to info windows
       marker.hoverInfoWindow = hoverInfoWindow
-      marker.clickInfoWindow = clickInfoWindow
       
       return marker
     }).filter(Boolean)
 
     setMarkers(newMarkers)
-
-    // FIXED: Add global function to handle event details opening
-    window.openEventDetails = (eventId: string) => {
-      const event = events.find(e => e.id === eventId)
-      if (event) {
-        console.log('Opening event details for:', event.title)
-        onEventClick(event)
-      }
-    }
 
     return () => {
       // Cleanup
@@ -348,17 +274,18 @@ const KakaoMap: React.FC<KakaoMapProps> = ({ events, onEventClick, selectedCateg
         if (marker && marker.hoverInfoWindow) {
           marker.hoverInfoWindow.close()
         }
-        if (marker && marker.clickInfoWindow) {
-          marker.clickInfoWindow.close()
-        }
       })
-      
-      // Clean up global function
+    }
+  }, [map, events, onEventClick, t, i18n.language])
+
+  // Cleanup global function on unmount
+  useEffect(() => {
+    return () => {
       if (window.openEventDetails) {
         delete window.openEventDetails
       }
     }
-  }, [map, events, onEventClick, t, i18n.language])
+  }, [])
 
   return (
     <div className="relative">

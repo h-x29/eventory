@@ -1,4 +1,5 @@
 import React from 'react'
+import { useTranslation } from 'react-i18next'
 import { X, MessageCircle, UserPlus, MapPin, Calendar, Heart, Star } from 'lucide-react'
 
 interface FriendProfileProps {
@@ -18,6 +19,8 @@ interface FriendProfileProps {
 }
 
 const FriendProfile: React.FC<FriendProfileProps> = ({ friend, onClose, onMessage }) => {
+  const { t } = useTranslation()
+
   const getUniversityColor = (university: string) => {
     switch (university) {
       case 'Seoul National University': return 'text-blue-600'
@@ -42,12 +45,17 @@ const FriendProfile: React.FC<FriendProfileProps> = ({ friend, onClose, onMessag
 
   // Mock data for friend's activities
   const recentEvents = [
-    { name: 'Korean Language Exchange', date: '2024-01-20', type: 'attended' },
-    { name: 'Photography Workshop', date: '2024-01-18', type: 'interested' },
-    { name: 'Basketball Tournament', date: '2024-01-15', type: 'attended' }
+    { name: t('friends.profile.sampleEvents.languageExchange'), date: '2024-01-20', type: 'attended' },
+    { name: t('friends.profile.sampleEvents.photographyWorkshop'), date: '2024-01-18', type: 'interested' },
+    { name: t('friends.profile.sampleEvents.basketballTournament'), date: '2024-01-15', type: 'attended' }
   ]
 
-  const commonInterests = ['Photography', 'Korean Culture', 'University Events']
+  const commonInterests = [
+    t('friends.profile.interests.photography'),
+    t('friends.profile.interests.koreanCulture'),
+    t('friends.profile.interests.universityEvents')
+  ]
+
   const mutualFriends = ['Mike Chen', 'Emma Lee', 'David Wang']
 
   return (
@@ -79,20 +87,20 @@ const FriendProfile: React.FC<FriendProfileProps> = ({ friend, onClose, onMessag
           <div className="grid grid-cols-2 gap-4">
             <div className="bg-gray-50 rounded-lg p-4 text-center">
               <p className="text-2xl font-bold text-gray-900">{friend.age}</p>
-              <p className="text-sm text-gray-600">Years Old</p>
+              <p className="text-sm text-gray-600">{t('friends.profile.yearsOld')}</p>
             </div>
             <div className="bg-gray-50 rounded-lg p-4 text-center">
               <span className={`px-3 py-1 rounded-full text-sm font-medium ${getMBTIColor(friend.mbti)}`}>
                 {friend.mbti}
               </span>
-              <p className="text-sm text-gray-600 mt-1">Personality</p>
+              <p className="text-sm text-gray-600 mt-1">{t('friends.profile.personality')}</p>
             </div>
           </div>
 
           {/* Bio */}
           {friend.bio && (
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">About</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">{t('friends.profile.about')}</h3>
               <p className="text-gray-600 leading-relaxed">{friend.bio}</p>
             </div>
           )}
@@ -102,7 +110,7 @@ const FriendProfile: React.FC<FriendProfileProps> = ({ friend, onClose, onMessag
             <div className="flex items-center gap-3">
               <Heart className="w-5 h-5 text-red-500" />
               <div>
-                <p className="font-medium text-gray-900">Hobby</p>
+                <p className="font-medium text-gray-900">{t('friends.profile.hobby')}</p>
                 <p className="text-gray-600">{friend.hobby}</p>
               </div>
             </div>
@@ -110,7 +118,7 @@ const FriendProfile: React.FC<FriendProfileProps> = ({ friend, onClose, onMessag
             <div className="flex items-center gap-3">
               <MapPin className="w-5 h-5 text-blue-500" />
               <div>
-                <p className="font-medium text-gray-900">Languages</p>
+                <p className="font-medium text-gray-900">{t('friends.profile.languages')}</p>
                 <p className="text-gray-600">{friend.language}</p>
               </div>
             </div>
@@ -118,7 +126,7 @@ const FriendProfile: React.FC<FriendProfileProps> = ({ friend, onClose, onMessag
 
           {/* Common Interests */}
           <div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-3">Common Interests</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-3">{t('friends.profile.commonInterests')}</h3>
             <div className="flex flex-wrap gap-2">
               {commonInterests.map((interest, index) => (
                 <span
@@ -133,7 +141,7 @@ const FriendProfile: React.FC<FriendProfileProps> = ({ friend, onClose, onMessag
 
           {/* Mutual Friends */}
           <div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-3">Mutual Friends</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-3">{t('friends.profile.mutualFriends')}</h3>
             <div className="space-y-2">
               {mutualFriends.map((friendName, index) => (
                 <div key={index} className="flex items-center gap-3">
@@ -150,7 +158,7 @@ const FriendProfile: React.FC<FriendProfileProps> = ({ friend, onClose, onMessag
 
           {/* Recent Activity */}
           <div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-3">Recent Activity</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-3">{t('friends.profile.recentActivity')}</h3>
             <div className="space-y-3">
               {recentEvents.map((event, index) => (
                 <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
@@ -166,7 +174,7 @@ const FriendProfile: React.FC<FriendProfileProps> = ({ friend, onClose, onMessag
                   <div className="flex-1">
                     <p className="font-medium text-gray-900 text-sm">{event.name}</p>
                     <p className="text-xs text-gray-500">
-                      {event.type === 'attended' ? 'Attended' : 'Interested'} • {event.date}
+                      {event.type === 'attended' ? t('friends.profile.attended') : t('friends.profile.interested')} • {event.date}
                     </p>
                   </div>
                 </div>
@@ -181,11 +189,11 @@ const FriendProfile: React.FC<FriendProfileProps> = ({ friend, onClose, onMessag
               className="flex-1 bg-blue-600 text-white py-3 px-4 rounded-xl hover:bg-blue-700 transition-colors font-medium flex items-center justify-center gap-2"
             >
               <MessageCircle className="w-5 h-5" />
-              Send Message
+              {t('friends.profile.sendMessage')}
             </button>
             <button className="flex-1 bg-gray-100 text-gray-700 py-3 px-4 rounded-xl hover:bg-gray-200 transition-colors font-medium flex items-center justify-center gap-2">
               <UserPlus className="w-5 h-5" />
-              Add Friend
+              {t('friends.profile.addFriend')}
             </button>
           </div>
         </div>

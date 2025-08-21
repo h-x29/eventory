@@ -174,6 +174,16 @@
       "photography": "사진 동아리",
       "basketball": "농구 모임",
       "study": "스터디 그룹"
+    },
+    "friends": {
+      "photography": "사진, 독서, 게임",
+      "koreanEnglish": "한국어, 영어",
+      "englishJapanese": "영어, 일본어",
+      "koreanJapanese": "한국어, 일본어",
+      "music": "음악, 댄스, 요리",
+      "sports": "스포츠, 피트니스, 여행",
+      "art": "예술, 디자인, 사진",
+      "gaming": "게임, 기술, 영화"
     }
   },
   "events": {
@@ -209,7 +219,8 @@
       "interested": "관심 있는 사람",
       "tags": "태그",
       "organizer": "주최자",
-      "description": "설명"
+      "description": "설명",
+      "yourStatus": "참여 상태"
     },
     "actions": {
       "join": "이벤트 참여",
@@ -219,13 +230,17 @@
       "like": "좋아요",
       "chat": "채팅",
       "share": "공유",
-      "report": "신고"
+      "report": "신고",
+      "viewDetails": "세부 정보 보기"
     },
     "status": {
       "upcoming": "예정",
       "ongoing": "진행 중",
       "past": "지난",
-      "cancelled": "취소됨"
+      "cancelled": "취소됨",
+      "attending": "참여 중",
+      "interested": "관심 있음",
+      "notParticipating": "참여하지 않음"
     },
     "create": {
       "title": "새 이벤트 만들기",
@@ -253,6 +268,10 @@
         "create": "이벤트 만들기",
         "cancel": "취소"
       }
+    },
+    "feedback": {
+      "joinedEvent": "이벤트에 참여했습니다!",
+      "leftEvent": "이벤트에서 나갔습니다"
     }
   },
   "newsletter": {

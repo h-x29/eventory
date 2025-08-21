@@ -1,8 +1,8 @@
-import React, { useCallback, useState } from 'react'
-import { Calendar, MapPin, Users, Clock, Heart } from 'lucide-react'
+import React from 'react'
+import { useTranslation } from 'react-i18next'
+import { Calendar, Clock, MapPin, Users, Heart, MessageCircle } from 'lucide-react'
 import { Event } from '../types/Event'
 import { useAuth } from '../contexts/AuthContext'
-import { useTranslation } from 'react-i18next'
 
 interface EventCardProps {
   event: Event
@@ -21,10 +21,21 @@ const EventCard: React.FC<EventCardProps> = ({
   isJoined,
   isInterested
 }) => {
-  const { user } = useAuth()
   const { t, i18n } = useTranslation()
-  const [isProcessing, setIsProcessing] = useState(false)
+  const { user } = useAuth()
 
+  // Get localized content for event
+  const getLocalizedEventContent = (event: Event) => {
+    const isKorean = i18n.language === 'ko'
+    return {
+      title: isKorean ? (event.title || event.titleEn) : (event.titleEn || event.title),
+      description: isKorean ? (event.description || event.descriptionEn) : (event.descriptionEn || event.description),
+      location: isKorean ? (event.location || event.locationEn) : (event.locationEn || event.location),
+      organizer: isKorean ? (event.organizer || event.organizerEn) : (event.organizerEn || event.organizer)
+    }
+  }
+
+  // Format date based on language
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
     if (i18n.language === 'ko') {
@@ -39,6 +50,7 @@ const EventCard: React.FC<EventCardProps> = ({
     })
   }
 
+  // Format time based on language
   const formatTime = (timeString: string) => {
     const [hours, minutes] = timeString.split(':')
     const date = new Date()
@@ -58,173 +70,124 @@ const EventCard: React.FC<EventCardProps> = ({
     })
   }
 
-  // FIXED: Get localized content based on current language
-  const getLocalizedContent = () => {
-    const isKorean = i18n.language === 'ko'
-    return {
-      title: isKorean ? (event.title || event.titleEn) : (event.titleEn || event.title),
-      description: isKorean ? (event.description || event.descriptionEn) : (event.descriptionEn || event.description),
-      location: isKorean ? (event.location || event.locationEn) : (event.locationEn || event.location)
+  const localizedContent = getLocalizedEventContent(event)
+  const isEventFull = event.attendees >= event.maxAttendees
+
+  // FIXED: Prevent multiple rapid clicks
+  const handleToggleAttendance = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (!user) {
+      alert(t('auth.loginRequired'))
+      return
     }
+    onToggleAttendance(event.id)
   }
 
-  const localizedContent = getLocalizedContent()
-
-  const isEventFull = event.attendees >= event.maxAttendees
-  const isPastEvent = new Date(event.date) < new Date()
-
-  const handleEventClick = useCallback(() => {
-    onEventClick(event)
-  }, [event, onEventClick])
-
-  const handleToggleAttendance = useCallback(async (e: React.MouseEvent) => {
-    e.preventDefault()
+  const handleToggleInterest = (e: React.MouseEvent) => {
     e.stopPropagation()
-    
-    if (isProcessing || !user) return
-    
-    setIsProcessing(true)
-    
-    try {
-      await new Promise(resolve => setTimeout(resolve, 100)) // Prevent rapid clicks
-      onToggleAttendance(event.id)
-    } catch (error) {
-      console.error('Error toggling attendance:', error)
-    } finally {
-      setIsProcessing(false)
+    if (!user) {
+      alert(t('auth.loginRequired'))
+      return
     }
-  }, [event.id, onToggleAttendance, user, isProcessing])
-
-  const handleToggleInterest = useCallback(async (e: React.MouseEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    
-    if (isProcessing || !user) return
-    
-    setIsProcessing(true)
-    
-    try {
-      await new Promise(resolve => setTimeout(resolve, 100)) // Prevent rapid clicks
-      onToggleInterest(event.id)
-    } catch (error) {
-      console.error('Error toggling interest:', error)
-    } finally {
-      setIsProcessing(false)
-    }
-  }, [event.id, onToggleInterest, user, isProcessing])
+    onToggleInterest(event.id)
+  }
 
   return (
-    <div className="bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden group cursor-pointer">
-      <div onClick={handleEventClick}>
-        {/* Image */}
-        <div className="relative overflow-hidden">
-          <img
-            src={event.image}
-            alt={localizedContent.title}
-            className="w-full h-40 object-cover group-hover:scale-105 transition-transform duration-200"
-          />
-          <div className="absolute top-2 left-2">
-            <span className="bg-blue-600 text-white px-2 py-1 rounded-full text-xs font-medium">
-              {t(`categories.${event.category}`)}
-            </span>
-          </div>
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow cursor-pointer">
+      {/* Event Image */}
+      <div className="relative h-48 overflow-hidden" onClick={() => onEventClick(event)}>
+        <img
+          src={event.image}
+          alt={localizedContent.title}
+          className="w-full h-full object-cover"
+        />
+        <div className="absolute top-3 left-3">
+          <span className={`px-2 py-1 rounded-full text-xs font-medium text-white ${
+            event.category === 'academic' ? 'bg-blue-600' :
+            event.category === 'cultural' ? 'bg-purple-600' :
+            event.category === 'club' ? 'bg-green-600' :
+            event.category === 'language' ? 'bg-orange-600' :
+            event.category === 'sports' ? 'bg-red-600' :
+            'bg-pink-600'
+          }`}>
+            {t(`categories.${event.category}`)}
+          </span>
         </div>
-
-        {/* Content */}
-        <div className="p-4">
-          <h3 className="text-base font-semibold text-gray-900 mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors">
-            {localizedContent.title}
-          </h3>
-          
-          <p className="text-gray-600 text-sm mb-3 line-clamp-2">
-            {localizedContent.description}
-          </p>
-
-          {/* Event Details */}
-          <div className="space-y-1 mb-3">
-            <div className="flex items-center gap-2 text-xs text-gray-600">
-              <Calendar className="w-3 h-3 text-blue-600" />
-              <span>{formatDate(event.date)}</span>
-            </div>
-            
-            <div className="flex items-center gap-2 text-xs text-gray-600">
-              <Clock className="w-3 h-3 text-blue-600" />
-              <span>{formatTime(event.time)}</span>
-            </div>
-            
-            <div className="flex items-center gap-2 text-xs text-gray-600">
-              <MapPin className="w-3 h-3 text-blue-600" />
-              <span className="truncate">{localizedContent.location}</span>
-            </div>
-            
-            <div className="flex items-center gap-2 text-xs text-gray-600">
-              <Users className="w-3 h-3 text-blue-600" />
-              <span>
-                {event.attendees}/{event.maxAttendees} {t('events.details.attendees')}
-              </span>
-            </div>
-          </div>
-
-          {/* Interest Count */}
-          <div className="flex items-center gap-2 text-xs text-gray-600 mb-3">
-            <Heart className="w-3 h-3 text-red-400" />
-            <span>
-              {event.interestedUsers.length} {t('events.details.interested')}
-            </span>
-          </div>
-
-          {/* Price */}
-          {event.price !== undefined && (
-            <div className="mb-3">
-              <span className="text-sm font-bold text-green-600">
-                {event.price === 0 ? t('common.free') : `₩${event.price.toLocaleString()}`}
-              </span>
-            </div>
-          )}
+        <div className="absolute top-3 right-3">
+          <button
+            onClick={handleToggleInterest}
+            className={`p-2 rounded-full transition-colors ${
+              isInterested
+                ? 'bg-red-500 text-white'
+                : 'bg-white/80 text-gray-600 hover:bg-white'
+            }`}
+          >
+            <Heart className={`w-4 h-4 ${isInterested ? 'fill-current' : ''}`} />
+          </button>
         </div>
       </div>
 
-      {/* Action Buttons */}
-      <div className="px-4 pb-4 flex gap-2">
-        {!isPastEvent && (
-          <button
-            onClick={handleToggleAttendance}
-            disabled={!user || (isEventFull && !isJoined) || isProcessing}
-            className={`flex-1 py-2 px-3 rounded-lg text-xs font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-              isJoined
-                ? 'bg-red-600 text-white hover:bg-red-700'
+      {/* Event Content */}
+      <div className="p-6" onClick={() => onEventClick(event)}>
+        <div className="flex items-start justify-between mb-3">
+          <h3 className="text-lg font-semibold text-gray-900 line-clamp-2">
+            {localizedContent.title}
+          </h3>
+          <div className="flex items-center gap-1 text-sm text-gray-500 ml-2">
+            <Heart className="w-4 h-4" />
+            <span>{event.interestedUsers.length}</span>
+          </div>
+        </div>
+
+        <p className="text-gray-600 text-sm mb-4 line-clamp-2">
+          {localizedContent.description}
+        </p>
+
+        <div className="space-y-2 mb-4">
+          <div className="flex items-center gap-2 text-sm text-gray-600">
+            <Calendar className="w-4 h-4" />
+            <span>{formatDate(event.date)}</span>
+          </div>
+          <div className="flex items-center gap-2 text-sm text-gray-600">
+            <Clock className="w-4 h-4" />
+            <span>{formatTime(event.time)}</span>
+          </div>
+          <div className="flex items-center gap-2 text-sm text-gray-600">
+            <MapPin className="w-4 h-4" />
+            <span>{localizedContent.location}</span>
+          </div>
+          <div className="flex items-center gap-2 text-sm text-gray-600">
+            <Users className="w-4 h-4" />
+            <span>{event.attendees}/{event.maxAttendees} {t('events.details.attendees')}</span>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between">
+          <div className="text-lg font-semibold text-gray-900">
+            {event.price === 0 ? t('common.free') : `₩${event.price.toLocaleString()}`}
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleToggleAttendance}
+              disabled={!isJoined && isEventFull}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                isJoined
+                  ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                  : isEventFull
+                  ? 'bg-gray-100 text-gray-500 cursor-not-allowed'
+                  : 'bg-blue-600 text-white hover:bg-blue-700'
+              }`}
+            >
+              {isJoined
+                ? t('events.actions.joined')
                 : isEventFull
-                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                : 'bg-blue-600 text-white hover:bg-blue-700'
-            }`}
-          >
-            {isProcessing ? (
-              <span className="flex items-center justify-center">
-                <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin mr-1"></div>
-                {t('common.processing')}
-              </span>
-            ) : !user 
-              ? t('nav.login')
-              : isJoined 
-              ? t('events.actions.leave')
-              : isEventFull 
-              ? t('events.actions.full')
-              : t('events.actions.join')
-            }
-          </button>
-        )}
-        
-        <button
-          onClick={handleToggleInterest}
-          disabled={!user || isProcessing}
-          className={`px-3 py-2 rounded-lg text-xs font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-            isInterested
-              ? 'bg-red-100 text-red-700 hover:bg-red-200'
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-          }`}
-        >
-          <Heart className={`w-3 h-3 ${isInterested ? 'fill-current' : ''}`} />
-        </button>
+                ? t('events.actions.full')
+                : t('events.actions.join')
+              }
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   )

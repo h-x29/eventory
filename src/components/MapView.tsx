@@ -34,6 +34,7 @@ const MapView: React.FC<MapViewProps> = ({
   const [mapError, setMapError] = useState<string | null>(null)
   const [showEventModal, setShowEventModal] = useState(false)
   const [modalEvent, setModalEvent] = useState<Event | null>(null)
+  const [isKakaoLoaded, setIsKakaoLoaded] = useState(false)
 
   const getCategoryColor = (category: string) => {
     switch (category) {
@@ -59,16 +60,79 @@ const MapView: React.FC<MapViewProps> = ({
     return labels[category] || { en: category, ko: category }
   }
 
+  // FIXED: Improved Kakao Maps loading with better error handling
+  const loadKakaoMaps = useCallback(() => {
+    return new Promise<void>((resolve, reject) => {
+      console.log('🗺️ Starting Kakao Maps loading process...')
+      
+      // Check if already loaded
+      if (window.kakao?.maps) {
+        console.log('✅ Kakao Maps already loaded')
+        setIsKakaoLoaded(true)
+        resolve()
+        return
+      }
+
+      // Check if script already exists
+      const existingScript = document.querySelector('script[src*="dapi.kakao.com"]')
+      if (existingScript) {
+        console.log('📜 Kakao script already exists, waiting for load...')
+        const checkKakao = () => {
+          if (window.kakao?.maps) {
+            console.log('✅ Kakao Maps loaded from existing script')
+            setIsKakaoLoaded(true)
+            resolve()
+          } else {
+            setTimeout(checkKakao, 100)
+          }
+        }
+        checkKakao()
+        return
+      }
+
+      // Create new script
+      const script = document.createElement('script')
+      script.type = 'text/javascript'
+      script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=95c4d96735fac42689ecec481164e569&autoload=false`
+      script.async = true
+      
+      script.onload = () => {
+        console.log('📜 Kakao script loaded, initializing maps...')
+        if (window.kakao?.maps) {
+          window.kakao.maps.load(() => {
+            console.log('✅ Kakao Maps API ready')
+            setIsKakaoLoaded(true)
+            resolve()
+          })
+        } else {
+          console.error('❌ Kakao object not found after script load')
+          reject(new Error('Kakao Maps API not available'))
+        }
+      }
+      
+      script.onerror = (error) => {
+        console.error('❌ Failed to load Kakao Maps script:', error)
+        reject(new Error('Failed to load Kakao Maps script'))
+      }
+
+      document.head.appendChild(script)
+      console.log('📜 Kakao script added to document')
+    })
+  }, [])
+
+  // FIXED: Improved map initialization
   const initializeMap = useCallback(() => {
-    console.log('🗺️ Initializing Kakao Map...')
+    console.log('🗺️ Initializing map...')
     
     if (!window.kakao?.maps) {
-      setMapError(t('common.error'))
+      console.error('❌ Kakao Maps not available')
+      setMapError('Kakao Maps API not loaded')
       return
     }
 
     if (!mapContainer.current) {
-      setMapError('Map container not available')
+      console.error('❌ Map container not available')
+      setMapError('Map container not found')
       return
     }
 
@@ -85,12 +149,10 @@ const MapView: React.FC<MapViewProps> = ({
         disableDoubleClickZoom: false
       }
 
+      console.log('🗺️ Creating map with options:', options)
       const map = new window.kakao.maps.Map(mapContainer.current, options)
       mapRef.current = map
       
-      setIsMapLoaded(true)
-      setMapError(null)
-
       // Add map controls
       const zoomControl = new window.kakao.maps.ZoomControl()
       map.addControl(zoomControl, window.kakao.maps.ControlPosition.TOPRIGHT)
@@ -99,21 +161,24 @@ const MapView: React.FC<MapViewProps> = ({
       map.addControl(mapTypeControl, window.kakao.maps.ControlPosition.TOPLEFT)
 
       console.log('✅ Map initialized successfully')
+      setIsMapLoaded(true)
+      setMapError(null)
 
     } catch (error) {
       console.error('❌ Map initialization error:', error)
       setMapError(`Map initialization failed: ${error}`)
+      setIsMapLoaded(false)
     }
-  }, [t])
+  }, [])
 
-  // NEW APPROACH: Use custom overlays instead of markers for better click handling
+  // FIXED: Improved marker creation with better error handling
   const createCustomMarkers = useCallback(() => {
-    if (!mapRef.current || !window.kakao) {
-      console.log('⚠️ Map or Kakao not ready')
+    if (!mapRef.current || !window.kakao || !isMapLoaded) {
+      console.log('⚠️ Map not ready for markers')
       return
     }
 
-    console.log('🎯 Creating custom markers for', events.length, 'events')
+    console.log('🎯 Creating markers for', events.length, 'events')
 
     // Clear existing overlays
     overlaysRef.current.forEach(overlay => {
@@ -132,6 +197,11 @@ const MapView: React.FC<MapViewProps> = ({
     markersRef.current = []
 
     events.forEach((event, index) => {
+      if (!event.coordinates) {
+        console.log('⚠️ Event missing coordinates:', event.title)
+        return
+      }
+
       const position = new window.kakao.maps.LatLng(
         event.coordinates.lat, 
         event.coordinates.lng
@@ -140,7 +210,7 @@ const MapView: React.FC<MapViewProps> = ({
       try {
         const color = getCategoryColor(event.category)
         
-        // Create custom overlay with HTML content for better click handling
+        // Create custom overlay with HTML content
         const overlayContent = document.createElement('div')
         overlayContent.className = 'custom-marker'
         overlayContent.style.cssText = `
@@ -167,30 +237,23 @@ const MapView: React.FC<MapViewProps> = ({
           overlayContent.style.boxShadow = '0 2px 8px rgba(0,0,0,0.3)'
         })
 
-        // CRITICAL: Direct click handler on the DOM element
+        // Click handler
         overlayContent.addEventListener('click', (e) => {
           e.preventDefault()
           e.stopPropagation()
           
-          console.log('🎯 CUSTOM MARKER CLICKED!')
-          console.log('Event:', event.title)
-          console.log('Event ID:', event.id)
+          console.log('🎯 Marker clicked:', event.title)
           
-          // Find current event data
           const currentEvent = events.find(e => e.id === event.id) || event
-          
-          // Show modal
           setModalEvent(currentEvent)
           setShowEventModal(true)
           onEventSelect(currentEvent)
           
-          // Center and zoom map
+          // Center map on event
           mapRef.current.panTo(position)
           setTimeout(() => {
             mapRef.current.setLevel(6)
           }, 300)
-          
-          console.log('✅ Modal should be showing now')
         })
 
         // Create custom overlay
@@ -202,23 +265,22 @@ const MapView: React.FC<MapViewProps> = ({
           zIndex: 1000 + index
         })
 
-        // Add to map
         customOverlay.setMap(mapRef.current)
         overlaysRef.current.push(customOverlay)
 
-        console.log(`✅ Custom marker created for: ${event.title}`)
+        console.log(`✅ Marker created for: ${event.title}`)
 
       } catch (error) {
-        console.error('❌ Error creating custom marker:', error)
+        console.error('❌ Error creating marker:', error)
       }
     })
 
-    console.log(`🎯 Total custom markers created: ${overlaysRef.current.length}`)
-  }, [events, onEventSelect])
+    console.log(`🎯 Total markers created: ${overlaysRef.current.length}`)
+  }, [events, onEventSelect, isMapLoaded])
 
   const handleToggleAttendance = (eventId: string) => {
     if (!user) {
-      alert(t('auth.login.title'))
+      alert(t('auth.loginRequired'))
       return
     }
 
@@ -241,7 +303,7 @@ const MapView: React.FC<MapViewProps> = ({
 
   const handleToggleInterest = (eventId: string) => {
     if (!user) {
-      alert(t('auth.login.title'))
+      alert(t('auth.loginRequired'))
       return
     }
 
@@ -259,31 +321,55 @@ const MapView: React.FC<MapViewProps> = ({
     console.log('Opening group chat for event:', event.title)
   }
 
+  // FIXED: Improved loading sequence
   useEffect(() => {
-    const checkKakaoMaps = () => {
-      if (window.kakao?.maps) {
-        window.kakao.maps.load(() => {
-          initializeMap()
-        })
-      } else {
-        setTimeout(checkKakaoMaps, 300)
+    let mounted = true
+
+    const initSequence = async () => {
+      try {
+        console.log('🚀 Starting map initialization sequence...')
+        
+        // Step 1: Load Kakao Maps
+        await loadKakaoMaps()
+        
+        if (!mounted) return
+        
+        // Step 2: Initialize map
+        setTimeout(() => {
+          if (mounted) {
+            initializeMap()
+          }
+        }, 100)
+        
+      } catch (error) {
+        console.error('❌ Map initialization sequence failed:', error)
+        if (mounted) {
+          setMapError(`Failed to load map: ${error}`)
+          setIsMapLoaded(false)
+        }
       }
     }
 
-    setTimeout(checkKakaoMaps, 100)
-  }, [initializeMap])
+    initSequence()
 
+    return () => {
+      mounted = false
+    }
+  }, [loadKakaoMaps, initializeMap])
+
+  // Create markers when map is ready and events are available
   useEffect(() => {
-    if (isMapLoaded && events.length > 0) {
-      console.log('🎯 Map ready, creating custom markers...')
+    if (isMapLoaded && events.length > 0 && isKakaoLoaded) {
+      console.log('🎯 Map ready, creating markers...')
       setTimeout(() => {
         createCustomMarkers()
-      }, 500)
+      }, 200)
     }
-  }, [events, isMapLoaded, createCustomMarkers])
+  }, [events, isMapLoaded, isKakaoLoaded, createCustomMarkers])
 
+  // Handle selected event
   useEffect(() => {
-    if (selectedEvent && mapRef.current && window.kakao) {
+    if (selectedEvent && mapRef.current && window.kakao && isMapLoaded) {
       const position = new window.kakao.maps.LatLng(
         selectedEvent.coordinates.lat, 
         selectedEvent.coordinates.lng
@@ -291,7 +377,7 @@ const MapView: React.FC<MapViewProps> = ({
       mapRef.current.panTo(position)
       mapRef.current.setLevel(6)
     }
-  }, [selectedEvent])
+  }, [selectedEvent, isMapLoaded])
 
   const resetMapView = () => {
     if (mapRef.current && window.kakao) {
@@ -299,14 +385,6 @@ const MapView: React.FC<MapViewProps> = ({
       mapRef.current.panTo(center)
       mapRef.current.setLevel(8)
     }
-  }
-
-  const testCustomMarkers = () => {
-    console.log('🧪 Testing custom markers...')
-    console.log('Custom overlays:', overlaysRef.current.length)
-    overlaysRef.current.forEach((overlay, index) => {
-      console.log(`Overlay ${index}:`, overlay)
-    })
   }
 
   return (
@@ -318,7 +396,7 @@ const MapView: React.FC<MapViewProps> = ({
         style={{ minHeight: '500px' }}
       />
       
-      {/* Loading/Error overlay */}
+      {/* FIXED: Better loading/error states */}
       {(!isMapLoaded || mapError) && (
         <div className="absolute inset-0 bg-gray-100 flex items-center justify-center">
           <div className="text-center max-w-md p-6">
@@ -326,24 +404,34 @@ const MapView: React.FC<MapViewProps> = ({
               <>
                 <div className="text-red-500 text-6xl mb-4">🗺️</div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  {t('common.error')}
+                  Map Loading Error
                 </h3>
-                <p className="text-gray-600 mb-4">{mapError}</p>
+                <p className="text-gray-600 mb-4 text-sm">{mapError}</p>
                 <button 
                   onClick={() => {
                     setMapError(null)
                     setIsMapLoaded(false)
-                    setTimeout(() => initializeMap(), 100)
+                    setIsKakaoLoaded(false)
+                    setTimeout(() => {
+                      loadKakaoMaps().then(() => {
+                        setTimeout(() => initializeMap(), 100)
+                      }).catch(err => {
+                        setMapError(`Reload failed: ${err}`)
+                      })
+                    }, 100)
                   }}
                   className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
                 >
-                  {t('common.loading')}
+                  Retry Loading
                 </button>
               </>
             ) : (
               <>
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                <p className="text-gray-600">{t('common.loading')}...</p>
+                <p className="text-gray-600">Loading Map...</p>
+                <p className="text-xs text-gray-400 mt-2">
+                  {!isKakaoLoaded ? 'Loading Kakao Maps API...' : 'Initializing map...'}
+                </p>
               </>
             )}
           </div>
@@ -356,17 +444,9 @@ const MapView: React.FC<MapViewProps> = ({
           <button 
             onClick={resetMapView}
             className="bg-white p-3 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 group"
-            title={t('events.view.map')}
+            title="Reset Map View"
           >
             <Navigation className="w-5 h-5 text-gray-700 group-hover:text-blue-600 transition-colors" />
-          </button>
-          
-          <button 
-            onClick={testCustomMarkers}
-            className="bg-yellow-500 text-white p-2 rounded-lg text-xs"
-            title="Test custom markers"
-          >
-            Test
           </button>
         </div>
       )}
@@ -376,7 +456,7 @@ const MapView: React.FC<MapViewProps> = ({
         <div className="absolute bottom-4 left-4 bg-white rounded-lg shadow-lg p-4 z-10 max-w-xs">
           <h4 className="text-sm font-semibold text-gray-900 mb-3 flex items-center">
             <MapPin className="w-4 h-4 mr-2 text-blue-600" />
-            {t('events.filter.all')}
+            Event Categories
           </h4>
           <div className="grid grid-cols-2 gap-2">
             {[
@@ -395,7 +475,7 @@ const MapView: React.FC<MapViewProps> = ({
                     style={{ backgroundColor: color }}
                   ></div>
                   <span className="text-xs text-gray-700 font-medium">
-                    {t(`events.filter.${category}`) || label.en}
+                    {label.en}
                   </span>
                 </div>
               )
@@ -403,10 +483,7 @@ const MapView: React.FC<MapViewProps> = ({
           </div>
           <div className="mt-3 pt-3 border-t border-gray-200">
             <p className="text-xs text-gray-500">
-              <strong>{t('common.loading')}</strong>
-            </p>
-            <p className="text-xs text-gray-400 mt-1">
-              {overlaysRef.current.length} markers loaded
+              <strong>{overlaysRef.current.length}</strong> events shown
             </p>
           </div>
         </div>
@@ -419,7 +496,7 @@ const MapView: React.FC<MapViewProps> = ({
             <Calendar className="w-4 h-4 text-blue-600" />
             <div>
               <p className="text-sm font-semibold text-gray-900">
-                {events.length} {t('nav.events')}
+                {events.length} Events
               </p>
               <p className="text-xs text-gray-500">Seoul</p>
             </div>

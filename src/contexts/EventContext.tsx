@@ -28,7 +28,7 @@ export const EventProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const { user, updateUser } = useAuth()
   const [events, setEvents] = useState<Event[]>(mockEvents)
   const [joinedEventIds, setJoinedEventIds] = useState<string[]>([])
-  const [isUpdating, setIsUpdating] = useState(false)
+  const [operationLocks, setOperationLocks] = useState<{ [eventId: string]: boolean }>({})
 
   // Load user's joined events from localStorage
   useEffect(() => {
@@ -58,7 +58,7 @@ export const EventProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   // Save joined events to localStorage whenever they change
   useEffect(() => {
-    if (user && joinedEventIds.length >= 0 && !isUpdating) {
+    if (user && joinedEventIds.length >= 0) {
       try {
         localStorage.setItem(`joinedEvents_${user.id}`, JSON.stringify(joinedEventIds))
         // Update user profile with attended events
@@ -68,7 +68,7 @@ export const EventProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         console.error('Error saving joined events:', error)
       }
     }
-  }, [joinedEventIds, user, updateUser, isUpdating])
+  }, [joinedEventIds, user, updateUser])
 
   // Update events with user's attendance status
   const eventsWithAttendance = events.map(event => ({
@@ -79,103 +79,132 @@ export const EventProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const joinedEvents = eventsWithAttendance.filter(event => event.isAttending)
 
   const isEventJoined = useCallback((eventId: string): boolean => {
-    const result = joinedEventIds.includes(eventId)
-    console.log(`isEventJoined(${eventId}):`, result)
-    return result
+    return joinedEventIds.includes(eventId)
   }, [joinedEventIds])
 
-  // FIXED: Enhanced join event logic with proper state management
+  // FIXED: Completely rewritten join event logic with operation locks
   const joinEvent = useCallback((eventId: string) => {
-    if (!user || isUpdating) {
-      console.log('Cannot join event: user not logged in or updating')
+    if (!user) {
+      console.log('Cannot join event: user not logged in')
       return
     }
 
-    // Check if user is already joined
+    // FIXED: Check operation lock to prevent concurrent operations
+    if (operationLocks[eventId]) {
+      console.log('Operation already in progress for event:', eventId)
+      return
+    }
+
+    // FIXED: Check if already joined
     if (joinedEventIds.includes(eventId)) {
-      console.log('User already joined this event')
+      console.log('User already joined event:', eventId)
       return
     }
 
-    // Check if event is full
+    // Check if event exists and is not full
     const event = events.find(e => e.id === eventId)
-    if (event && event.attendees >= event.maxAttendees) {
-      console.log('Event is full, cannot join')
+    if (!event) {
+      console.log('Event not found:', eventId)
       return
     }
 
-    setIsUpdating(true)
-    
+    if (event.attendees >= event.maxAttendees) {
+      console.log('Event is full:', eventId)
+      return
+    }
+
     console.log(`Joining event ${eventId}...`)
     
-    // Update joined events list
-    const newJoinedEvents = [...joinedEventIds, eventId]
-    setJoinedEventIds(newJoinedEvents)
+    // FIXED: Set operation lock
+    setOperationLocks(prev => ({ ...prev, [eventId]: true }))
     
-    // FIXED: Update event attendee count atomically
-    setEvents(prev => prev.map(event => {
-      if (event.id === eventId) {
-        const newAttendeeCount = Math.min(event.attendees + 1, event.maxAttendees)
-        console.log(`Event ${eventId}: Attendees ${event.attendees} -> ${newAttendeeCount}`)
-        return { 
-          ...event, 
-          attendees: newAttendeeCount,
-          isAttending: true
+    try {
+      // FIXED: Update joined events first
+      setJoinedEventIds(prev => {
+        if (prev.includes(eventId)) {
+          console.log('Event already in joined list, skipping')
+          return prev
         }
-      }
-      return event
-    }))
+        return [...prev, eventId]
+      })
+      
+      // FIXED: Update event attendee count
+      setEvents(prev => prev.map(e => {
+        if (e.id === eventId && !joinedEventIds.includes(eventId)) {
+          const newAttendeeCount = Math.min(e.attendees + 1, e.maxAttendees)
+          console.log(`Event ${eventId}: Attendees ${e.attendees} -> ${newAttendeeCount}`)
+          return { 
+            ...e, 
+            attendees: newAttendeeCount,
+            isAttending: true
+          }
+        }
+        return e
+      }))
 
-    console.log('Successfully joined event:', eventId)
-    
-    // Reset updating flag after a short delay
-    setTimeout(() => {
-      setIsUpdating(false)
-    }, 200)
-  }, [user, joinedEventIds, events, isUpdating])
+      console.log('Successfully joined event:', eventId)
+    } catch (error) {
+      console.error('Error joining event:', error)
+    } finally {
+      // FIXED: Clear operation lock after delay
+      setTimeout(() => {
+        setOperationLocks(prev => ({ ...prev, [eventId]: false }))
+      }, 1000)
+    }
+  }, [user, joinedEventIds, events, operationLocks])
 
-  // FIXED: Enhanced leave event logic with proper state management
+  // FIXED: Completely rewritten leave event logic with operation locks
   const leaveEvent = useCallback((eventId: string) => {
-    if (!user || isUpdating) {
-      console.log('Cannot leave event: user not logged in or updating')
+    if (!user) {
+      console.log('Cannot leave event: user not logged in')
       return
     }
 
-    // Check if user is actually joined
+    // FIXED: Check operation lock to prevent concurrent operations
+    if (operationLocks[eventId]) {
+      console.log('Operation already in progress for event:', eventId)
+      return
+    }
+
+    // FIXED: Check if actually joined
     if (!joinedEventIds.includes(eventId)) {
-      console.log('User is not joined to this event')
+      console.log('User is not joined to event:', eventId)
       return
     }
 
-    setIsUpdating(true)
-    
     console.log(`Leaving event ${eventId}...`)
     
-    // Update joined events list
-    const newJoinedEvents = joinedEventIds.filter(id => id !== eventId)
-    setJoinedEventIds(newJoinedEvents)
+    // FIXED: Set operation lock
+    setOperationLocks(prev => ({ ...prev, [eventId]: true }))
     
-    // FIXED: Update event attendee count atomically
-    setEvents(prev => prev.map(event => {
-      if (event.id === eventId) {
-        const newAttendeeCount = Math.max(event.attendees - 1, 0)
-        console.log(`Event ${eventId}: Attendees ${event.attendees} -> ${newAttendeeCount}`)
-        return { 
-          ...event, 
-          attendees: newAttendeeCount,
-          isAttending: false
+    try {
+      // FIXED: Update joined events first
+      setJoinedEventIds(prev => prev.filter(id => id !== eventId))
+      
+      // FIXED: Update event attendee count
+      setEvents(prev => prev.map(e => {
+        if (e.id === eventId && joinedEventIds.includes(eventId)) {
+          const newAttendeeCount = Math.max(e.attendees - 1, 0)
+          console.log(`Event ${eventId}: Attendees ${e.attendees} -> ${newAttendeeCount}`)
+          return { 
+            ...e, 
+            attendees: newAttendeeCount,
+            isAttending: false
+          }
         }
-      }
-      return event
-    }))
+        return e
+      }))
 
-    console.log('Successfully left event:', eventId)
-    
-    // Reset updating flag after a short delay
-    setTimeout(() => {
-      setIsUpdating(false)
-    }, 200)
-  }, [user, joinedEventIds, isUpdating])
+      console.log('Successfully left event:', eventId)
+    } catch (error) {
+      console.error('Error leaving event:', error)
+    } finally {
+      // FIXED: Clear operation lock after delay
+      setTimeout(() => {
+        setOperationLocks(prev => ({ ...prev, [eventId]: false }))
+      }, 1000)
+    }
+  }, [user, joinedEventIds, operationLocks])
 
   const addEvent = useCallback((eventData: Omit<Event, 'id'>) => {
     const newEvent: Event = {
@@ -204,12 +233,10 @@ export const EventProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, [])
 
   const toggleInterest = useCallback((eventId: string) => {
-    if (!user || isUpdating) {
-      console.log('Cannot toggle interest: user not logged in or updating')
+    if (!user) {
+      console.log('Cannot toggle interest: user not logged in')
       return
     }
-
-    setIsUpdating(true)
 
     setEvents(prevEvents => 
       prevEvents.map(event => {
@@ -229,9 +256,7 @@ export const EventProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         return event
       })
     )
-    
-    setTimeout(() => setIsUpdating(false), 100)
-  }, [user, isUpdating])
+  }, [user])
 
   return (
     <EventContext.Provider value={{

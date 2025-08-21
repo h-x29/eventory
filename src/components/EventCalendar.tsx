@@ -12,11 +12,56 @@ interface EventCalendarProps {
 }
 
 const EventCalendar: React.FC<EventCalendarProps> = ({ onEventClick }) => {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const { user } = useAuth()
   const { joinedEvents } = useEvents()
   const [selectedDate, setSelectedDate] = useState<Date>(new Date())
   const [view, setView] = useState<'calendar' | 'list'>('calendar')
+
+  // Get localized content for event
+  const getLocalizedEventContent = (event: Event) => {
+    const isKorean = i18n.language === 'ko'
+    return {
+      title: isKorean ? (event.title || event.titleEn) : (event.titleEn || event.title),
+      location: isKorean ? (event.location || event.locationEn) : (event.locationEn || event.location)
+    }
+  }
+
+  // Format date for display based on language
+  const formatDateForDisplay = (date: Date) => {
+    if (i18n.language === 'ko') {
+      return date.toLocaleDateString('ko-KR', {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric'
+      })
+    }
+    return date.toLocaleDateString('en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric'
+    })
+  }
+
+  // Format time based on language
+  const formatTime = (timeString: string) => {
+    const [hours, minutes] = timeString.split(':')
+    const date = new Date()
+    date.setHours(parseInt(hours), parseInt(minutes))
+    
+    if (i18n.language === 'ko') {
+      return date.toLocaleTimeString('ko-KR', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      })
+    }
+    return date.toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    })
+  }
 
   // FIXED: Real-time updates when joined events change
   useEffect(() => {
@@ -116,12 +161,20 @@ const EventCalendar: React.FC<EventCalendarProps> = ({ onEventClick }) => {
 
   const upcomingEvents = getUpcomingEvents()
 
-  const formatDateForDisplay = (date: Date) => {
-    return date.toLocaleDateString('ko-KR', {
-      weekday: 'short',
-      month: 'short',
-      day: 'numeric'
-    })
+  // FIXED: Calendar locale configuration
+  const getCalendarLocale = () => {
+    return i18n.language === 'ko' ? 'ko-KR' : 'en-US'
+  }
+
+  // FIXED: Calendar navigation labels based on language
+  const getNavigationLabel = ({ date, label, locale, view }: any) => {
+    if (i18n.language === 'ko') {
+      if (view === 'month') {
+        return `${date.getFullYear()}년 ${date.getMonth() + 1}월`
+      }
+      return label
+    }
+    return label
   }
 
   return (
@@ -185,6 +238,21 @@ const EventCalendar: React.FC<EventCalendarProps> = ({ onEventClick }) => {
                 prev2Label={null}
                 next2Label={null}
                 className="custom-calendar"
+                locale={getCalendarLocale()}
+                navigationLabel={getNavigationLabel}
+                formatMonthYear={(locale, date) => {
+                  if (i18n.language === 'ko') {
+                    return `${date.getFullYear()}년 ${date.getMonth() + 1}월`
+                  }
+                  return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long' })
+                }}
+                formatShortWeekday={(locale, date) => {
+                  if (i18n.language === 'ko') {
+                    const days = ['일', '월', '화', '수', '목', '금', '토']
+                    return days[date.getDay()]
+                  }
+                  return date.toLocaleDateString('en-US', { weekday: 'short' }).slice(0, 3)
+                }}
               />
             </div>
           </div>
@@ -196,31 +264,34 @@ const EventCalendar: React.FC<EventCalendarProps> = ({ onEventClick }) => {
             </h3>
             {selectedDateEvents.length > 0 ? (
               <div className="space-y-3">
-                {selectedDateEvents.map((event) => (
-                  <div
-                    key={event.id}
-                    onClick={() => onEventClick(event)}
-                    className="p-3 bg-blue-50 rounded-lg cursor-pointer hover:bg-blue-100 transition-colors"
-                  >
-                    <h4 className="font-medium text-gray-900 text-sm mb-1">
-                      {event.title}
-                    </h4>
-                    <div className="flex items-center gap-2 text-xs text-gray-600 mb-1">
-                      <Clock className="w-3 h-3" />
-                      <span>{event.time}</span>
+                {selectedDateEvents.map((event) => {
+                  const localizedContent = getLocalizedEventContent(event)
+                  return (
+                    <div
+                      key={event.id}
+                      onClick={() => onEventClick(event)}
+                      className="p-3 bg-blue-50 rounded-lg cursor-pointer hover:bg-blue-100 transition-colors"
+                    >
+                      <h4 className="font-medium text-gray-900 text-sm mb-1">
+                        {localizedContent.title}
+                      </h4>
+                      <div className="flex items-center gap-2 text-xs text-gray-600 mb-1">
+                        <Clock className="w-3 h-3" />
+                        <span>{formatTime(event.time)}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-gray-600">
+                        <MapPin className="w-3 h-3" />
+                        <span>{localizedContent.location}</span>
+                      </div>
+                      {/* FIXED: Show attendance status */}
+                      <div className="mt-2 flex items-center justify-between">
+                        <span className="text-xs text-green-700 bg-green-100 px-2 py-1 rounded-full font-medium">
+                          ✅ {t('dashboard.calendar.joined')}
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2 text-xs text-gray-600">
-                      <MapPin className="w-3 h-3" />
-                      <span>{event.location}</span>
-                    </div>
-                    {/* FIXED: Show attendance status */}
-                    <div className="mt-2 flex items-center justify-between">
-                      <span className="text-xs text-green-700 bg-green-100 px-2 py-1 rounded-full font-medium">
-                        ✅ {t('dashboard.calendar.joined')}
-                      </span>
-                    </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             ) : (
               <p className="text-gray-500 text-sm">{t('dashboard.calendar.noEventsOnDate')}</p>
@@ -235,39 +306,42 @@ const EventCalendar: React.FC<EventCalendarProps> = ({ onEventClick }) => {
           </h3>
           {upcomingEvents.length > 0 ? (
             <div className="space-y-4">
-              {upcomingEvents.map((event) => (
-                <div
-                  key={event.id}
-                  onClick={() => onEventClick(event)}
-                  className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
-                >
-                  <img
-                    src={event.image}
-                    alt={event.title}
-                    className="w-16 h-16 object-cover rounded-lg"
-                  />
-                  <div className="flex-1">
-                    <h4 className="font-medium text-gray-900 mb-1">{event.title}</h4>
-                    <div className="flex items-center gap-4 text-sm text-gray-600">
-                      <div className="flex items-center gap-1">
-                        <CalendarIcon className="w-4 h-4" />
-                        <span>{event.date}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Clock className="w-4 h-4" />
-                        <span>{event.time}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <MapPin className="w-4 h-4" />
-                        <span>{event.location}</span>
+              {upcomingEvents.map((event) => {
+                const localizedContent = getLocalizedEventContent(event)
+                return (
+                  <div
+                    key={event.id}
+                    onClick={() => onEventClick(event)}
+                    className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+                  >
+                    <img
+                      src={event.image}
+                      alt={localizedContent.title}
+                      className="w-16 h-16 object-cover rounded-lg"
+                    />
+                    <div className="flex-1">
+                      <h4 className="font-medium text-gray-900 mb-1">{localizedContent.title}</h4>
+                      <div className="flex items-center gap-4 text-sm text-gray-600">
+                        <div className="flex items-center gap-1">
+                          <CalendarIcon className="w-4 h-4" />
+                          <span>{event.date}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Clock className="w-4 h-4" />
+                          <span>{formatTime(event.time)}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <MapPin className="w-4 h-4" />
+                          <span>{localizedContent.location}</span>
+                        </div>
                       </div>
                     </div>
+                    <div className="px-3 py-1 bg-green-100 text-green-800 text-xs rounded-full font-medium">
+                      ✅ {t('dashboard.calendar.joined')}
+                    </div>
                   </div>
-                  <div className="px-3 py-1 bg-green-100 text-green-800 text-xs rounded-full font-medium">
-                    ✅ {t('dashboard.calendar.joined')}
-                  </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           ) : (
             <div className="text-center py-8">
