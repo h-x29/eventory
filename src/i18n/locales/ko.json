@@ -88,7 +88,7 @@
     "welcome": "다시 오신 것을 환영합니다",
     "loginMessage": "대시보드에 액세스하려면 로그인하세요.",
     "stats": {
-      "attended": "참석한 이벤트",
+      "attended": "참여한 이벤트",
       "interested": "관심 있는 이벤트",
       "friends": "친구",
       "chats": "그룹 채팅",
@@ -492,14 +492,14 @@
     },
     "invite": {
       "title": "이메일로 친구 초대",
-      "subtitle": "Seoul Student Events에 초대장을 보내세요",
+      "subtitle": "Eventory (이벤터리)에 초대장을 보내세요",
       "emailLabel": "이메일 주소",
       "emailPlaceholder": "friend@university.ac.kr",
       "send": "초대장 보내기",
       "previewTitle": "초대장 미리보기",
       "body": {
         "greeting": "안녕하세요!",
-        "line1": "서울 전역의 대학생들이 연결되고 다양한 이벤트를 발견하는 플랫폼, Seoul Student Events에 함께 하시길 초대드립니다.",
+        "line1": "서울 전역의 대학생들이 연결되고 다양한 이벤트를 발견하는 플랫폼, Eventory (이벤터리)에 함께 하시길 초대드립니다.",
         "line2": "저와 수많은 학생들과 함께 멋진 커뮤니티를 만들어봐요!",
         "signature": "감사합니다.\n{{name}} 드림"
       }

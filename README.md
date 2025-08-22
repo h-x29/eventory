@@ -1,4 +1,4 @@
-# Seoul Student Events - Internationalization Guide
+# Eventory (이벤터리) - Internationalization Guide
 
 ## 🌍 Translation System
 

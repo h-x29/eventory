@@ -84,7 +84,7 @@ const SignupPage: React.FC = () => {
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex items-center gap-2 mb-6">
             <Calendar className="w-8 h-8 text-blue-600" />
-            <span className="text-xl font-bold text-gray-900">Seoul Student Events</span>
+            <span className="text-xl font-bold text-gray-900">Eventory (이벤터리)</span>
           </Link>
           
           {/* Language Toggle */}

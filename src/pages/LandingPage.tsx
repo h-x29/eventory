@@ -27,7 +27,7 @@ const LandingPage: React.FC = () => {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
               <Calendar className="w-8 h-8 text-blue-600" />
-              <span className="ml-2 text-xl font-bold text-gray-900">Seoul Student Events</span>
+              <span className="ml-2 text-xl font-bold text-gray-900">Eventory (이벤터리)</span>
             </div>
 
             <div className="flex items-center gap-4">
@@ -197,7 +197,7 @@ const LandingPage: React.FC = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center">
               <Calendar className="w-8 h-8 text-blue-400" />
-              <span className="ml-2 text-xl font-bold">Seoul Student Events</span>
+              <span className="ml-2 text-xl font-bold">Eventory (이벤터리)</span>
             </div>
             <div className="text-gray-400">{t('landing.footer.copyright')}</div>
           </div>

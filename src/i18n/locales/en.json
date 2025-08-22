@@ -38,7 +38,7 @@
       "satisfaction": "Satisfaction Rate"
     },
     "footer": {
-      "copyright": "© 2024 Seoul Student Events. All rights reserved."
+      "copyright": "© 2024 Eventory (이벤터리). All rights reserved."
     }
   },
   "auth": {
@@ -89,7 +89,7 @@
     "welcome": "Welcome back",
     "loginMessage": "Please login to access your dashboard.",
     "stats": {
-      "attended": "Events Attended",
+      "attended": "Events Joined",
       "interested": "Events Interested",
       "friends": "Friends",
       "chats": "Group Chats",
@@ -493,14 +493,14 @@
     },
     "invite": {
       "title": "Invite Friends by Email",
-      "subtitle": "Send an invitation to join Seoul Student Events",
+      "subtitle": "Send an invitation to join Eventory (이벤터리)",
       "emailLabel": "Email Address",
       "emailPlaceholder": "friend@university.ac.kr",
       "send": "Send Invitation",
       "previewTitle": "Invitation Preview",
       "body": {
         "greeting": "Hi there!",
-        "line1": "I'd like to invite you to join Seoul Student Events — a platform where university students connect and discover amazing events happening across Seoul.",
+        "line1": "I'd like to invite you to join Eventory (이벤터리) — a platform where university students connect and discover amazing events happening across Seoul.",
         "line2": "Join me and thousands of other students in building an amazing community!",
         "signature": "Best regards,\n{{name}}"
       }
