@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
-import { X, Search, UserPlus, Users, MessageCircle, Mail } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
+import { X, Search, Users, MessageCircle, Mail } from 'lucide-react'
 import FriendProfile from './FriendProfile'
 import FriendMessaging from './FriendMessaging'
 
@@ -7,7 +8,21 @@ interface FriendsModalProps {
   onClose: () => void
 }
 
+const UNI_NAME_TO_KEY: Record<string, string> = {
+  'Seoul National University': 'snu',
+  'Yonsei University': 'yonsei',
+  'Korea University': 'korea',
+  'Hanyang University': 'hanyang',
+  'Ewha Womans University': 'ewha',
+  'Sogang University': 'sogang',
+  'Hongik University': 'hongik',
+  'Konkuk University': 'konkuk',
+  // If your JSON also includes this, keep it; otherwise the fallback will show the raw name:
+  'Sungkyunkwan University': 'sungkyunkwan',
+}
+
 const FriendsModal: React.FC<FriendsModalProps> = ({ onClose }) => {
+  const { t } = useTranslation()
   const [activeTab, setActiveTab] = useState<'search' | 'requests' | 'invite'>('search')
   const [searchQuery, setSearchQuery] = useState('')
   const [inviteEmail, setInviteEmail] = useState('')
@@ -15,157 +30,72 @@ const FriendsModal: React.FC<FriendsModalProps> = ({ onClose }) => {
   const [showMessaging, setShowMessaging] = useState(false)
   const [messagingFriend, setMessagingFriend] = useState<any>(null)
 
-  // Mock data for friend suggestions
   const friendSuggestions = [
-    {
-      id: '1',
-      name: 'Sarah Jung',
-      university: 'Yonsei University',
-      hobby: 'Photography',
-      age: 21,
-      mbti: 'ENFP',
-      language: 'Korean, English',
-      mutualFriends: 3,
-      avatar: 'SJ',
-      isRequested: false,
-      bio: 'Photography enthusiast and art lover. Always looking for new places to explore in Seoul!'
-    },
-    {
-      id: '2',
-      name: 'Mike Chen',
-      university: 'Korea University',
-      hobby: 'Basketball',
-      age: 23,
-      mbti: 'ESTP',
-      language: 'English, Chinese',
-      mutualFriends: 5,
-      avatar: 'MC',
-      isRequested: false,
-      bio: 'Basketball player and sports enthusiast. Love meeting new people and staying active!'
-    },
-    {
-      id: '3',
-      name: 'Emma Lee',
-      university: 'Seoul National University',
-      hobby: 'Music',
-      age: 20,
-      mbti: 'INFP',
-      language: 'Korean, English, Japanese',
-      mutualFriends: 2,
-      avatar: 'EL',
-      isRequested: true,
-      bio: 'Music lover and aspiring composer. Enjoy classical music and K-pop equally!'
-    },
-    {
-      id: '4',
-      name: 'David Wang',
-      university: 'Hanyang University',
-      hobby: 'Gaming',
-      age: 22,
-      mbti: 'INTP',
-      language: 'English, Korean',
-      mutualFriends: 1,
-      avatar: 'DW',
-      isRequested: false,
-      bio: 'Tech enthusiast and gamer. Always up for discussing the latest games and technology!'
-    },
-    {
-      id: '5',
-      name: 'Jenny Han',
-      university: 'Ewha Womans University',
-      hobby: 'Art',
-      age: 21,
-      mbti: 'ISFP',
-      language: 'Korean, English',
-      mutualFriends: 4,
-      avatar: 'JH',
-      isRequested: false,
-      bio: 'Digital artist and design student. Love creating and sharing art with others!'
-    }
+    { id: '1', name: 'Sarah Jung', university: 'Yonsei University', hobby: 'Photography', age: 21, mbti: 'ENFP', language: 'Korean, English', mutualFriends: 3, avatar: 'SJ', isRequested: false, bio: 'Photography enthusiast and art lover. Always looking for new places to explore in Seoul!' },
+    { id: '2', name: 'Mike Chen', university: 'Korea University', hobby: 'Basketball', age: 23, mbti: 'ESTP', language: 'English, Chinese', mutualFriends: 5, avatar: 'MC', isRequested: false, bio: 'Basketball player and sports enthusiast. Love meeting new people and staying active!' },
+    { id: '3', name: 'Emma Lee', university: 'Seoul National University', hobby: 'Music', age: 20, mbti: 'INFP', language: 'Korean, English, Japanese', mutualFriends: 2, avatar: 'EL', isRequested: true, bio: 'Music lover and aspiring composer. Enjoy classical music and K-pop equally!' },
+    { id: '4', name: 'David Wang', university: 'Hanyang University', hobby: 'Gaming', age: 22, mbti: 'INTP', language: 'English, Korean', mutualFriends: 1, avatar: 'DW', isRequested: false, bio: 'Tech enthusiast and gamer. Always up for discussing the latest games and technology!' },
+    { id: '5', name: 'Jenny Han', university: 'Ewha Womans University', hobby: 'Art', age: 21, mbti: 'ISFP', language: 'Korean, English', mutualFriends: 4, avatar: 'JH', isRequested: false, bio: 'Digital artist and design student. Love creating and sharing art with others!' }
   ]
 
-  // Mock friend requests
   const friendRequests = [
-    {
-      id: '1',
-      name: 'Alex Park',
-      university: 'Sungkyunkwan University',
-      hobby: 'Reading',
-      age: 24,
-      mbti: 'INTJ',
-      language: 'Korean, English',
-      avatar: 'AP',
-      requestTime: '2 hours ago',
-      bio: 'Bookworm and philosophy student. Enjoy deep conversations and quiet cafes.'
-    },
-    {
-      id: '2',
-      name: 'Lisa Kim',
-      university: 'Sogang University',
-      hobby: 'Dancing',
-      age: 20,
-      mbti: 'ESFP',
-      language: 'Korean, English',
-      avatar: 'LK',
-      requestTime: '1 day ago',
-      bio: 'Dance enthusiast and performer. Love expressing myself through movement!'
-    }
+    { id: '1', name: 'Alex Park', university: 'Sungkyunkwan University', hobby: 'Reading', age: 24, mbti: 'INTJ', language: 'Korean, English', avatar: 'AP', requestTime: '2 hours ago', bio: 'Bookworm and philosophy student. Enjoy deep conversations and quiet cafes.' },
+    { id: '2', name: 'Lisa Kim', university: 'Sogang University', hobby: 'Dancing', age: 20, mbti: 'ESFP', language: 'Korean, English', avatar: 'LK', requestTime: '1 day ago', bio: 'Dance enthusiast and performer. Love expressing myself through movement!' }
   ]
 
   const [suggestions, setSuggestions] = useState(friendSuggestions)
   const [requests, setRequests] = useState(friendRequests)
 
-  const handleSendRequest = (userId: string) => {
-    setSuggestions(prev =>
-      prev.map(user =>
-        user.id === userId ? { ...user, isRequested: true } : user
-      )
-    )
+  const uniKey = (name: string) => UNI_NAME_TO_KEY[name] || ''
+  const uniLabel = (name: string) => {
+    const key = uniKey(name)
+    // defaultValue makes sure we fall back to the original English if the key is missing
+    return key ? t(`universities.${key}`, { defaultValue: name }) : name
   }
-
-  const handleAcceptRequest = (userId: string) => {
-    setRequests(prev => prev.filter(user => user.id !== userId))
-    alert('Friend request accepted! 🎉')
-  }
-
-  const handleRejectRequest = (userId: string) => {
-    setRequests(prev => prev.filter(user => user.id !== userId))
-  }
-
-  const handleInviteByEmail = () => {
-    if (inviteEmail.trim()) {
-      alert(`Invitation sent to ${inviteEmail}! 📧`)
-      setInviteEmail('')
-    }
-  }
-
-  const handleOpenProfile = (friend: any) => {
-    setSelectedFriend(friend)
-  }
-
-  const handleOpenMessaging = (friend: any) => {
-    setMessagingFriend(friend)
-    setShowMessaging(true)
-  }
-
-  const getUniversityColor = (university: string) => {
-    switch (university) {
-      case 'Seoul National University': return 'text-blue-600'
-      case 'Yonsei University': return 'text-red-600'
-      case 'Korea University': return 'text-red-700'
-      case 'Hanyang University': return 'text-blue-700'
-      case 'Ewha Womans University': return 'text-green-600'
-      case 'Sungkyunkwan University': return 'text-yellow-600'
-      case 'Sogang University': return 'text-purple-600'
+  const uniColor = (name: string) => {
+    switch (uniKey(name)) {
+      case 'snu': return 'text-blue-600'
+      case 'yonsei': return 'text-red-600'
+      case 'korea': return 'text-red-700'
+      case 'hanyang': return 'text-blue-700'
+      case 'ewha': return 'text-green-600'
+      case 'sogang': return 'text-purple-600'
+      case 'hongik': return 'text-gray-700'
+      case 'konkuk': return 'text-emerald-700'
+      case 'sungkyunkwan': return 'text-yellow-600'
       default: return 'text-gray-600'
     }
   }
 
-  const filteredSuggestions = suggestions.filter(user =>
-    user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    user.university.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    user.hobby.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+  const handleSendRequest = (userId: string) => {
+    setSuggestions(prev => prev.map(u => (u.id === userId ? { ...u, isRequested: true } : u)))
+  }
+  const handleAcceptRequest = (userId: string) => {
+    setRequests(prev => prev.filter(u => u.id !== userId))
+    alert(t('friendsModal.alerts.accepted'))
+  }
+  const handleRejectRequest = (userId: string) => {
+    setRequests(prev => prev.filter(u => u.id !== userId))
+  }
+  const handleInviteByEmail = () => {
+    if (inviteEmail.trim()) {
+      alert(t('friendsModal.alerts.invited', { email: inviteEmail }))
+      setInviteEmail('')
+    }
+  }
+  const handleOpenProfile = (friend: any) => setSelectedFriend(friend)
+  const handleOpenMessaging = (friend: any) => { setMessagingFriend(friend); setShowMessaging(true) }
+
+  const normalizedQuery = searchQuery.toLowerCase()
+  const filteredSuggestions = suggestions.filter(u => {
+    const localizedUni = uniLabel(u.university).toLowerCase()
+    return (
+      u.name.toLowerCase().includes(normalizedQuery) ||
+      u.university.toLowerCase().includes(normalizedQuery) || // English name
+      localizedUni.includes(normalizedQuery) ||               // Localized (Korean) label
+      u.hobby.toLowerCase().includes(normalizedQuery)
+    )
+  })
 
   return (
     <>
@@ -173,11 +103,8 @@ const FriendsModal: React.FC<FriendsModalProps> = ({ onClose }) => {
         <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden">
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-gray-200">
-            <h2 className="text-xl font-bold text-gray-900">Find Friends</h2>
-            <button
-              onClick={onClose}
-              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-            >
+            <h2 className="text-xl font-bold text-gray-900">{t('friendsModal.header')}</h2>
+            <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
               <X className="w-5 h-5" />
             </button>
           </div>
@@ -187,24 +114,20 @@ const FriendsModal: React.FC<FriendsModalProps> = ({ onClose }) => {
             <button
               onClick={() => setActiveTab('search')}
               className={`flex-1 px-6 py-3 text-sm font-medium transition-colors ${
-                activeTab === 'search'
-                  ? 'text-blue-600 border-b-2 border-blue-600'
-                  : 'text-gray-500 hover:text-gray-700'
+                activeTab === 'search' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700'
               }`}
             >
               <Search className="w-4 h-4 inline mr-2" />
-              Find People
+              {t('friendsModal.tabs.search')}
             </button>
             <button
               onClick={() => setActiveTab('requests')}
               className={`flex-1 px-6 py-3 text-sm font-medium transition-colors relative ${
-                activeTab === 'requests'
-                  ? 'text-blue-600 border-b-2 border-blue-600'
-                  : 'text-gray-500 hover:text-gray-700'
+                activeTab === 'requests' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700'
               }`}
             >
               <Users className="w-4 h-4 inline mr-2" />
-              Requests
+              {t('friendsModal.tabs.requests')}
               {requests.length > 0 && (
                 <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
                   {requests.length}
@@ -214,13 +137,11 @@ const FriendsModal: React.FC<FriendsModalProps> = ({ onClose }) => {
             <button
               onClick={() => setActiveTab('invite')}
               className={`flex-1 px-6 py-3 text-sm font-medium transition-colors ${
-                activeTab === 'invite'
-                  ? 'text-blue-600 border-b-2 border-blue-600'
-                  : 'text-gray-500 hover:text-gray-700'
+                activeTab === 'invite' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700'
               }`}
             >
               <Mail className="w-4 h-4 inline mr-2" />
-              Invite
+              {t('friendsModal.tabs.invite')}
             </button>
           </div>
 
@@ -235,7 +156,7 @@ const FriendsModal: React.FC<FriendsModalProps> = ({ onClose }) => {
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search by name, university, or hobby..."
+                    placeholder={t('friendsModal.searchPlaceholder')}
                     className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
@@ -254,16 +175,21 @@ const FriendsModal: React.FC<FriendsModalProps> = ({ onClose }) => {
                         >
                           {user.name}
                         </button>
-                        <p className={`text-sm font-medium ${getUniversityColor(user.university)}`}>
-                          {user.university}
+                        <p className={`text-sm font-medium ${uniColor(user.university)}`}>
+                          {uniLabel(user.university)}
                         </p>
-                        <p className="text-sm text-gray-600">Hobby: {user.hobby}</p>
-                        <p className="text-xs text-gray-500">{user.mutualFriends} mutual friends</p>
+                        <p className="text-sm text-gray-600">
+                          {t('friendsModal.labels.hobby')}: {user.hobby}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {t('friendsModal.mutualFriends', { count: user.mutualFriends })}
+                        </p>
                       </div>
                       <div className="flex gap-2">
-                        <button 
+                        <button
                           onClick={() => handleOpenMessaging(user)}
                           className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-200 rounded-lg transition-colors"
+                          aria-label={t('friendsModal.actions.message')}
                         >
                           <MessageCircle className="w-5 h-5" />
                         </button>
@@ -271,12 +197,10 @@ const FriendsModal: React.FC<FriendsModalProps> = ({ onClose }) => {
                           onClick={() => handleSendRequest(user.id)}
                           disabled={user.isRequested}
                           className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                            user.isRequested
-                              ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                              : 'bg-blue-600 text-white hover:bg-blue-700'
+                            user.isRequested ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700'
                           }`}
                         >
-                          {user.isRequested ? 'Requested' : 'Add Friend'}
+                          {user.isRequested ? t('friendsModal.requested') : t('friendsModal.addFriend')}
                         </button>
                       </div>
                     </div>
@@ -290,7 +214,7 @@ const FriendsModal: React.FC<FriendsModalProps> = ({ onClose }) => {
                 {requests.length === 0 ? (
                   <div className="text-center py-8">
                     <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-500">No friend requests at the moment</p>
+                    <p className="text-gray-500">{t('friendsModal.noRequests')}</p>
                   </div>
                 ) : (
                   <div className="space-y-4">
@@ -306,24 +230,28 @@ const FriendsModal: React.FC<FriendsModalProps> = ({ onClose }) => {
                           >
                             {user.name}
                           </button>
-                          <p className={`text-sm font-medium ${getUniversityColor(user.university)}`}>
-                            {user.university}
+                          <p className={`text-sm font-medium ${uniColor(user.university)}`}>
+                            {uniLabel(user.university)}
                           </p>
-                          <p className="text-sm text-gray-600">Hobby: {user.hobby}</p>
-                          <p className="text-xs text-gray-500">Sent {user.requestTime}</p>
+                          <p className="text-sm text-gray-600">
+                            {t('friendsModal.labels.hobby')}: {user.hobby}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {t('friendsModal.sent', { time: user.requestTime })}
+                          </p>
                         </div>
                         <div className="flex gap-2">
                           <button
                             onClick={() => handleRejectRequest(user.id)}
                             className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
                           >
-                            Decline
+                            {t('friendsModal.actions.decline')}
                           </button>
                           <button
                             onClick={() => handleAcceptRequest(user.id)}
                             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
                           >
-                            Accept
+                            {t('friendsModal.actions.accept')}
                           </button>
                         </div>
                       </div>
@@ -337,20 +265,22 @@ const FriendsModal: React.FC<FriendsModalProps> = ({ onClose }) => {
               <div>
                 <div className="text-center mb-6">
                   <Mail className="w-12 h-12 text-blue-600 mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Invite Friends by Email</h3>
-                  <p className="text-gray-600">Send an invitation to join Seoul Student Events</p>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                    {t('friendsModal.invite.title')}
+                  </h3>
+                  <p className="text-gray-600">{t('friendsModal.invite.subtitle')}</p>
                 </div>
 
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Email Address
+                      {t('friendsModal.invite.emailLabel')}
                     </label>
                     <input
                       type="email"
                       value={inviteEmail}
                       onChange={(e) => setInviteEmail(e.target.value)}
-                      placeholder="friend@university.ac.kr"
+                      placeholder={t('friendsModal.invite.emailPlaceholder')}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                   </div>
@@ -360,17 +290,19 @@ const FriendsModal: React.FC<FriendsModalProps> = ({ onClose }) => {
                     disabled={!inviteEmail.trim()}
                     className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors font-medium"
                   >
-                    Send Invitation
+                    {t('friendsModal.invite.send')}
                   </button>
                 </div>
 
                 <div className="mt-8 p-4 bg-blue-50 rounded-lg">
-                  <h4 className="font-medium text-blue-900 mb-2">Invitation Preview</h4>
+                  <h4 className="font-medium text-blue-900 mb-2">
+                    {t('friendsModal.invite.previewTitle')}
+                  </h4>
                   <div className="text-sm text-blue-800 bg-white p-3 rounded border">
-                    <p className="mb-2">Hi there!</p>
-                    <p className="mb-2">I'd like to invite you to join Seoul Student Events - a platform where university students connect and discover amazing events happening across Seoul.</p>
-                    <p className="mb-2">Join me and thousands of other students in building an amazing community!</p>
-                    <p>Best regards,<br />Alex Kim</p>
+                    <p className="mb-2">{t('friendsModal.invite.body.greeting')}</p>
+                    <p className="mb-2">{t('friendsModal.invite.body.line1')}</p>
+                    <p className="mb-2">{t('friendsModal.invite.body.line2')}</p>
+                    <p>{t('friendsModal.invite.body.signature', { name: 'Alex Kim' })}</p>
                   </div>
                 </div>
               </div>

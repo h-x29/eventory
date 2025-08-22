@@ -46,13 +46,14 @@
       "title": "Welcome Back",
       "subtitle": "Sign in to your account to continue",
       "button": "Sign In",
-      "link": "Don't have an account? Sign up"
+      "link": "Already have an account? Sign in"
+      
     },
     "signup": {
       "title": "Join Our Community",
       "subtitle": "Create your account to start discovering events",
       "button": "Create Account",
-      "link": "Already have an account? Sign in"
+      "link": "Don't have an account? Sign up"
     },
     "fields": {
       "email": "Email",
@@ -171,19 +172,32 @@
     },
     "groupChats": {
       "koreanLanguage": "Korean Language Exchange",
+      "photographyWorkshop": "Photography Workshop",
+      "seoulFoodTour": "Seoul Food Tour",
       "photography": "Photography Club",
       "basketball": "Basketball Meetup",
-      "study": "Study Group"
+      "study": "Study Group",
+      "lookingForward": "Looking forward to this!",
+      "bringCameras": "Don't forget to bring your cameras 📷",
+      "meetingHongdae": "Meeting at Hongdae Station Exit 9",
+      "twoMinAgo": "2 min ago",
+      "oneHourAgo": "1 hour ago",
+      "threeHoursAgo": "3 hours ago"
     },
     "friends": {
       "photography": "Photography, Reading, Gaming",
       "koreanEnglish": "Korean, English",
+      "englishKorean" : "English, Korean",
       "englishJapanese": "English, Japanese",
+      "englishChinese" : "English, Chinese",
       "koreanJapanese": "Korean, Japanese",
+      "koreanEnglishJapanese" : "Korean, English, Japanese",
       "music": "Music, Dancing, Cooking",
       "sports": "Sports, Fitness, Travel",
       "art": "Art, Design, Photography",
-      "gaming": "Gaming, Technology, Movies"
+      "gaming": "Gaming, Technology, Movies",
+      "basketball" : "Basketball, Sports",
+      "dancing" : "Dancing, Music, Painting"
     }
   },
   "events": {
@@ -267,7 +281,8 @@
       "buttons": {
         "create": "Create Event",
         "cancel": "Cancel"
-      }
+      },
+      "selectCategory": "Select category"
     },
     "feedback": {
       "joinedEvent": "You have joined the event!",
@@ -403,7 +418,8 @@
     "ewha": "Ewha Womans University",
     "sogang": "Sogang University",
     "hongik": "Hongik University",
-    "konkuk": "Konkuk University"
+    "konkuk": "Konkuk University",
+    "sungkyunkwan": "Sungkyunkwan University"
   },
   "friends": {
     "title": "Friends",
@@ -452,6 +468,46 @@
         "photographyWorkshop": "Photography Workshop",
         "basketballTournament": "Basketball Tournament"
       }
+    }
+  },
+  "friendsModal": {
+    "header": "Find Friends",
+    "tabs": {
+      "search": "Find People",
+      "requests": "Requests",
+      "invite": "Invite"
+    },
+    "searchPlaceholder": "Search by name, university, or hobby...",
+    "labels": {
+      "hobby": "Hobby"
+    },
+    "mutualFriends": "{{count}} mutual friends",
+    "requested": "Requested",
+    "addFriend": "Add Friend",
+    "noRequests": "No friend requests at the moment",
+    "sent": "Sent {{time}}",
+    "actions": {
+      "message": "Message",
+      "accept": "Accept",
+      "decline": "Decline"
+    },
+    "invite": {
+      "title": "Invite Friends by Email",
+      "subtitle": "Send an invitation to join Seoul Student Events",
+      "emailLabel": "Email Address",
+      "emailPlaceholder": "friend@university.ac.kr",
+      "send": "Send Invitation",
+      "previewTitle": "Invitation Preview",
+      "body": {
+        "greeting": "Hi there!",
+        "line1": "I'd like to invite you to join Seoul Student Events — a platform where university students connect and discover amazing events happening across Seoul.",
+        "line2": "Join me and thousands of other students in building an amazing community!",
+        "signature": "Best regards,\n{{name}}"
+      }
+    },
+    "alerts": {
+      "accepted": "Friend request accepted! 🎉",
+      "invited": "Invitation sent to {{email}}! 📧"
     }
   }
 }
