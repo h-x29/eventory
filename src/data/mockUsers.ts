@@ -1,9 +1,14 @@
+export type UniversityKey =
+  | 'snu' | 'yonsei' | 'korea' | 'hanyang'
+  | 'ewha' | 'sungkyunkwan' | 'hongik' | 'sogang'
+
 export interface User {
   id: string
   name: string
   email: string
   password: string
   university: string
+  universityKey?: UniversityKey
   age: number
   hobby: string
   mbti: string
@@ -20,6 +25,7 @@ export const mockUsers: User[] = [
     email: 'huimin@yonsei.ac.kr',
     password: 'password123',
     university: 'Yonsei University',
+    universityKey: 'yonsei',
     age: 21,
     hobby: 'Photography, Reading, Gaming',
     mbti: 'ENFP',
@@ -34,6 +40,7 @@ export const mockUsers: User[] = [
     email: 'sarah@snu.ac.kr',
     password: 'password123',
     university: 'Seoul National University',
+    universityKey: 'snu',
     age: 22,
     hobby: 'Music, Dancing, Cooking',
     mbti: 'ISFJ',
@@ -48,6 +55,7 @@ export const mockUsers: User[] = [
     email: 'alex@korea.ac.kr',
     password: 'password123',
     university: 'Korea University',
+    universityKey: 'korea',
     age: 23,
     hobby: 'Sports, Fitness, Travel',
     mbti: 'ESTP',
@@ -62,6 +70,7 @@ export const mockUsers: User[] = [
     email: 'emma@ewha.ac.kr',
     password: 'password123',
     university: 'Ewha Womans University',
+    universityKey: 'ewha',
     age: 20,
     hobby: 'Art, Design, Photography',
     mbti: 'INFP',
@@ -76,6 +85,7 @@ export const mockUsers: User[] = [
     email: 'david@hanyang.ac.kr',
     password: 'password123',
     university: 'Hanyang University',
+    universityKey: 'hanyang',
     age: 24,
     hobby: 'Gaming, Technology, Movies',
     mbti: 'INTP',

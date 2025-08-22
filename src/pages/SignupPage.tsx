@@ -4,13 +4,30 @@ import { useTranslation } from 'react-i18next'
 import { Calendar, Eye, EyeOff, Globe } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 
+type UniversityOption = {
+  key: 'snu'|'yonsei'|'korea'|'hanyang'|'ewha'|'sungkyunkwan'|'hongik'|'sogang'
+  en: string
+  ko: string
+}
+
+const universityOptions: UniversityOption[] = [
+  { key: 'snu', en: 'Seoul National University', ko: '서울대학교' },
+  { key: 'yonsei', en: 'Yonsei University', ko: '연세대학교' },
+  { key: 'korea', en: 'Korea University', ko: '고려대학교' },
+  { key: 'hanyang', en: 'Hanyang University', ko: '한양대학교' },
+  { key: 'ewha', en: 'Ewha Womans University', ko: '이화여자대학교' },
+  { key: 'sungkyunkwan', en: 'Sungkyunkwan University', ko: '성균관대학교' },
+  { key: 'hongik', en: 'Hongik University', ko: '홍익대학교' },
+  { key: 'sogang', en: 'Sogang University', ko: '서강대학교' },
+]
+
 const SignupPage: React.FC = () => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     password: '',
     age: '',
-    university: '',
+    universityKey: '', // ✅ store the stable key
     hobby: '',
     mbti: '',
     language: ''
@@ -22,17 +39,6 @@ const SignupPage: React.FC = () => {
   const { signup } = useAuth()
   const { t, i18n } = useTranslation()
   const navigate = useNavigate()
-
-  const universities = [
-    'Seoul National University',
-    'Yonsei University', 
-    'Korea University',
-    'Hanyang University',
-    'Ewha Womans University',
-    'Sungkyunkwan University',
-    'Hongik University',
-    'Sogang University'
-  ]
 
   const mbtiTypes = [
     'INTJ', 'INTP', 'ENTJ', 'ENTP',
@@ -54,9 +60,15 @@ const SignupPage: React.FC = () => {
     setIsLoading(true)
 
     try {
+      // find display label for the selected key (so backend has both)
+      const uni = universityOptions.find(u => u.key === formData.universityKey)
+      const displayUniversity = uni ? (i18n.language === 'ko' ? uni.ko : uni.en) : ''
+
       const success = await signup({
         ...formData,
-        age: parseInt(formData.age),
+        age: parseInt(formData.age, 10),
+        universityKey: formData.universityKey,
+        university: displayUniversity, // optional convenience display label
         password: formData.password
       })
       
@@ -65,7 +77,7 @@ const SignupPage: React.FC = () => {
       } else {
         setError(t('common.error') || 'Signup failed. Please try again.')
       }
-    } catch (err) {
+    } catch {
       setError(t('common.error') || 'Signup failed. Please try again.')
     } finally {
       setIsLoading(false)
@@ -84,7 +96,7 @@ const SignupPage: React.FC = () => {
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex items-center gap-2 mb-6">
             <Calendar className="w-8 h-8 text-blue-600" />
-            <span className="text-xl font-bold text-gray-900">Eventory (이벤터리)</span>
+            <span className="text-xl font-bold text-gray-900">Seoul Student Events</span>
           </Link>
           
           {/* Language Toggle */}
@@ -194,15 +206,17 @@ const SignupPage: React.FC = () => {
               </label>
               <select
                 id="university"
-                name="university"
-                value={formData.university}
+                name="universityKey"
+                value={formData.universityKey}
                 onChange={handleChange}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 required
               >
                 <option value="">{t('auth.placeholders.university')}</option>
-                {universities.map((uni) => (
-                  <option key={uni} value={uni}>{uni}</option>
+                {universityOptions.map((u) => (
+                  <option key={u.key} value={u.key}>
+                    {i18n.language === 'ko' ? u.ko : u.en}
+                  </option>
                 ))}
               </select>
             </div>
@@ -270,10 +284,7 @@ const SignupPage: React.FC = () => {
           </form>
 
           <div className="mt-6 text-center">
-            <Link
-              to="/login"
-              className="text-blue-600 hover:text-blue-700 font-medium"
-            >
+            <Link to="/login" className="text-blue-600 hover:text-blue-700 font-medium">
               {t('auth.login.link')}
             </Link>
           </div>

@@ -58,9 +58,9 @@ const DashboardPage: React.FC = () => {
 
   // ---- Helpers --------------------------------------------------------------
 
+  // Localize event title/location using optional *En fields if provided.
   const getLocalized = (e: Event) => {
     const isKo = i18n.language === 'ko'
-    // Use optional *En fields when available
     const anyE: any = e
     return {
       title: isKo ? (e.title || anyE.titleEn) : (anyE.titleEn || e.title),
@@ -70,6 +70,7 @@ const DashboardPage: React.FC = () => {
 
   const toggleSection = (s: string) => setExpandedSection(expandedSection === s ? null : s)
 
+  // Colors for friend cards (they store localized labels already)
   const getUniversityColor = (university: string) => {
     switch (university) {
       case t('universities.snu'): return 'text-blue-600'
@@ -82,26 +83,31 @@ const DashboardPage: React.FC = () => {
     }
   }
 
+  // Label for the signed-in user's university (uses stable key if present)
+  const profileUniversityLabel =
+    (user as any).universityKey
+      ? t(`universities.${(user as any).universityKey}`)
+      : user.university
+
   // ---- Derived data ---------------------------------------------------------
 
-  // ❤️ TRUE interested events (based on likes), not "not joined"
+  // ❤️ "Interested" means the event has the current user in interestedUsers
   const myInterestedEvents = useMemo(() => {
     if (!user) return []
     return events.filter(e => e.interestedUsers?.includes(user.name))
   }, [events, user])
 
-  // Slice for expanded cards
   const attendedEvents = joinedEvents.slice(0, 6)
   const interestedEvents = myInterestedEvents.slice(0, 6)
 
   const userStats = {
     eventsAttended: joinedEvents.length,
-    eventsInterested: myInterestedEvents.length, // ✅ fixed
+    eventsInterested: myInterestedEvents.length,
     friendsCount: 24,
     groupChatsJoined: 6
   }
 
-  // Mock group chats (unchanged)
+  // Group chats preview list
   const groupChats = [
     {
       id: '1',
@@ -206,7 +212,7 @@ const DashboardPage: React.FC = () => {
                 {t('dashboard.welcome')}, {user.name}!
               </h1>
               <p className="text-gray-600 mt-1">
-                {user.university} • {user.hobby} • {user.mbti}
+                {profileUniversityLabel} • {user.hobby} • {user.mbti}
               </p>
             </div>
             <div className="flex items-center gap-4">
@@ -388,127 +394,7 @@ const DashboardPage: React.FC = () => {
           </div>
         )}
 
-        {/* Friends & Chats sections remain as in your file (unchanged) -------- */}
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main Content */}
-          <div className="lg:col-span-2 space-y-8">
-            {/* Host Event */}
-            <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-8 text-white">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-2xl font-bold mb-2">{t('dashboard.host.title')}</h2>
-                  <p className="text-blue-100 mb-6">{t('dashboard.host.subtitle')}</p>
-                  <button
-                    onClick={() => setShowCreateEvent(true)}
-                    className="bg-white text-blue-600 px-6 py-3 rounded-lg font-medium hover:bg-gray-50 transition-colors inline-flex items-center gap-2"
-                  >
-                    <Plus className="w-5 h-5" />
-                    {t('dashboard.host.button')}
-                  </button>
-                </div>
-                <div className="hidden md:block">
-                  <div className="w-24 h-24 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
-                    <Calendar className="w-12 h-12 text-white" />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Recent Activity */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-6">{t('dashboard.sections.recentActivity')}</h2>
-              <div className="space-y-4">
-                {joinedEvents.slice(0, 3).map((e, index) => {
-                  const L = getLocalized(e)
-                  return (
-                    <div key={e.id} className="flex items-center gap-4 p-4 bg-blue-50 rounded-lg">
-                      <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                        <Calendar className="w-5 h-5 text-blue-600" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="font-medium text-gray-900">{t('dashboard.activity.joined')} {L.title}</p>
-                        <p className="text-sm text-gray-600">
-                          {index === 0 ? t('dashboard.activity.twoHoursAgo') : index === 1 ? t('dashboard.activity.oneDayAgo') : t('dashboard.activity.twoDaysAgo')}
-                        </p>
-                      </div>
-                    </div>
-                  )
-                })}
-                {joinedEvents.length === 0 && (
-                  <div className="text-center py-4">
-                    <p className="text-gray-500">{t('dashboard.activity.noRecentActivity')}</p>
-                    <p className="text-sm text-gray-400">{t('dashboard.activity.joinEventsToSeeActivity')}</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Profile Card */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('dashboard.profile.title')}</h3>
-              <div className="space-y-3">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">{t('dashboard.profile.university')}</p>
-                  <p className="text-gray-900">{user.university}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-600">{t('dashboard.profile.age')}</p>
-                  <p className="text-gray-900">{user.age} {t('dashboard.profile.yearsOld')}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-600">{t('dashboard.profile.hobby')}</p>
-                  <p className="text-gray-900">{user.hobby}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-600">{t('dashboard.profile.mbti')}</p>
-                  <p className="text-gray-900">{user.mbti}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-600">{t('dashboard.profile.languages')}</p>
-                  <p className="text-gray-900">{user.language}</p>
-                </div>
-              </div>
-              <button className="w-full mt-4 bg-gray-100 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-200 transition-colors inline-flex items-center justify-center gap-2">
-                <Edit className="w-4 h-4" />
-                {t('dashboard.profile.editProfile')}
-              </button>
-            </div>
-
-            {/* Quick Actions */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('dashboard.quickActions.title')}</h3>
-              <div className="space-y-2">
-                <button
-                  onClick={() => setShowFriendsModal(true)}
-                  className="w-full text-left p-3 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-3"
-                >
-                  <Users className="w-5 h-5 text-gray-600" />
-                  <span className="text-gray-700">{t('dashboard.quickActions.findFriends')}</span>
-                </button>
-                <button
-                  onClick={() => toggleSection('chats')}
-                  className="w-full text-left p-3 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-3"
-                >
-                  <MessageCircle className="w-5 h-5 text-gray-600" />
-                  <span className="text-gray-700">{t('dashboard.quickActions.joinGroupChats')}</span>
-                </button>
-                <button
-                  onClick={() => (window.location.href = '/events')}
-                  className="w-full text-left p-3 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-3"
-                >
-                  <Calendar className="w-5 h-5 text-gray-600" />
-                  <span className="text-gray-700">{t('dashboard.quickActions.browseEvents')}</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Friends & Chats expanded sections (unchanged content) */}
+        {/* Friends & Chats sections ------------------------------------------ */}
         {expandedSection === 'friends' && (
           <div className="mb-8 bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
             <div className="flex items-center justify-between mb-4">
@@ -580,6 +466,125 @@ const DashboardPage: React.FC = () => {
             </div>
           </div>
         )}
+
+        {/* Main + Sidebar ----------------------------------------------------- */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Main Content */}
+          <div className="lg:col-span-2 space-y-8">
+            {/* Host Event */}
+            <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-8 text-white">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-2xl font-bold mb-2">{t('dashboard.host.title')}</h2>
+                  <p className="text-blue-100 mb-6">{t('dashboard.host.subtitle')}</p>
+                  <button
+                    onClick={() => setShowCreateEvent(true)}
+                    className="bg-white text-blue-600 px-6 py-3 rounded-lg font-medium hover:bg-gray-50 transition-colors inline-flex items-center gap-2"
+                  >
+                    <Plus className="w-5 h-5" />
+                    {t('dashboard.host.button')}
+                  </button>
+                </div>
+                <div className="hidden md:block">
+                  <div className="w-24 h-24 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                    <Calendar className="w-12 h-12 text-white" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Recent Activity */}
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+              <h2 className="text-xl font-semibold text-gray-900 mb-6">{t('dashboard.sections.recentActivity')}</h2>
+              <div className="space-y-4">
+                {joinedEvents.slice(0, 3).map((e, index) => {
+                  const L = getLocalized(e)
+                  return (
+                    <div key={e.id} className="flex items-center gap-4 p-4 bg-blue-50 rounded-lg">
+                      <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                        <Calendar className="w-5 h-5 text-blue-600" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-medium text-gray-900">{t('dashboard.activity.joined')} {L.title}</p>
+                        <p className="text-sm text-gray-600">
+                          {index === 0 ? t('dashboard.activity.twoHoursAgo') : index === 1 ? t('dashboard.activity.oneDayAgo') : t('dashboard.activity.twoDaysAgo')}
+                        </p>
+                      </div>
+                    </div>
+                  )
+                })}
+                {joinedEvents.length === 0 && (
+                  <div className="text-center py-4">
+                    <p className="text-gray-500">{t('dashboard.activity.noRecentActivity')}</p>
+                    <p className="text-sm text-gray-400">{t('dashboard.activity.joinEventsToSeeActivity')}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Sidebar */}
+          <div className="space-y-6">
+            {/* Profile Card */}
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('dashboard.profile.title')}</h3>
+              <div className="space-y-3">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">{t('dashboard.profile.university')}</p>
+                  <p className="text-gray-900">{profileUniversityLabel}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-600">{t('dashboard.profile.age')}</p>
+                  <p className="text-gray-900">{user.age} {t('dashboard.profile.yearsOld')}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-600">{t('dashboard.profile.hobby')}</p>
+                  <p className="text-gray-900">{user.hobby}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-600">{t('dashboard.profile.mbti')}</p>
+                  <p className="text-gray-900">{user.mbti}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-600">{t('dashboard.profile.languages')}</p>
+                  <p className="text-gray-900">{user.language}</p>
+                </div>
+              </div>
+              <button className="w-full mt-4 bg-gray-100 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-200 transition-colors inline-flex items-center justify-center gap-2">
+                <Edit className="w-4 h-4" />
+                {t('dashboard.profile.editProfile')}
+              </button>
+            </div>
+
+            {/* Quick Actions */}
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('dashboard.quickActions.title')}</h3>
+              <div className="space-y-2">
+                <button
+                  onClick={() => setShowFriendsModal(true)}
+                  className="w-full text-left p-3 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-3"
+                >
+                  <Users className="w-5 h-5 text-gray-600" />
+                  <span className="text-gray-700">{t('dashboard.quickActions.findFriends')}</span>
+                </button>
+                <button
+                  onClick={() => toggleSection('chats')}
+                  className="w-full text-left p-3 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-3"
+                >
+                  <MessageCircle className="w-5 h-5 text-gray-600" />
+                  <span className="text-gray-700">{t('dashboard.quickActions.joinGroupChats')}</span>
+                </button>
+                <button
+                  onClick={() => (window.location.href = '/events')}
+                  className="w-full text-left p-3 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-3"
+                >
+                  <Calendar className="w-5 h-5 text-gray-600" />
+                  <span className="text-gray-700">{t('dashboard.quickActions.browseEvents')}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Modals */}
