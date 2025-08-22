@@ -11,6 +11,8 @@ interface EventCalendarProps {
   onEventClick: (event: Event) => void
 }
 
+type EventWithDate = Event & { dateObj: Date }
+
 const EventCalendar: React.FC<EventCalendarProps> = ({ onEventClick }) => {
   const { t, i18n } = useTranslation()
   const { user } = useAuth()
@@ -22,157 +24,96 @@ const EventCalendar: React.FC<EventCalendarProps> = ({ onEventClick }) => {
   const getLocalizedEventContent = (event: Event) => {
     const isKorean = i18n.language === 'ko'
     return {
-      title: isKorean ? (event.title || event.titleEn) : (event.titleEn || event.title),
-      location: isKorean ? (event.location || event.locationEn) : (event.locationEn || event.location)
+      title: isKorean ? (event.title || (event as any).titleEn) : ((event as any).titleEn || event.title),
+      location: isKorean ? (event.location || (event as any).locationEn) : ((event as any).locationEn || event.location)
     }
   }
 
-  // Format date for display based on language
   const formatDateForDisplay = (date: Date) => {
     if (i18n.language === 'ko') {
-      return date.toLocaleDateString('ko-KR', {
-        weekday: 'short',
-        month: 'short',
-        day: 'numeric'
-      })
+      return date.toLocaleDateString('ko-KR', { weekday: 'short', month: 'short', day: 'numeric' })
     }
-    return date.toLocaleDateString('en-US', {
-      weekday: 'short',
-      month: 'short',
-      day: 'numeric'
-    })
+    return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
   }
 
-  // Format time based on language
   const formatTime = (timeString: string) => {
     const [hours, minutes] = timeString.split(':')
     const date = new Date()
     date.setHours(parseInt(hours), parseInt(minutes))
-    
     if (i18n.language === 'ko') {
-      return date.toLocaleTimeString('ko-KR', {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false
-      })
+      return date.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false })
     }
-    return date.toLocaleTimeString('en-US', {
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true
-    })
+    return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
   }
 
-  // FIXED: Real-time updates when joined events change
   useEffect(() => {
+    // helpful debug logs
     console.log('EventCalendar - User:', user?.name)
     console.log('EventCalendar - Joined events count:', joinedEvents.length)
-    console.log('EventCalendar - Joined events:', joinedEvents.map(e => ({ 
-      id: e.id, 
-      title: e.title, 
-      date: e.date,
-      isAttending: e.isAttending 
-    })))
   }, [user, joinedEvents])
 
   // Convert event dates to Date objects for calendar
-  const eventDates = joinedEvents.map(event => {
+  const eventDates: EventWithDate[] = joinedEvents.map(event => {
     try {
-      // Parse date in YYYY-MM-DD format
       const [year, month, day] = event.date.split('-').map(Number)
       const dateObj = new Date(year, month - 1, day)
-      console.log(`EventCalendar - Processing event "${event.title}": ${event.date} -> ${dateObj.toDateString()}`)
-      return {
-        ...event,
-        dateObj
-      }
+      return { ...event, dateObj }
     } catch (error) {
       console.error('EventCalendar - Error parsing date for event:', event.title, event.date, error)
-      return {
-        ...event,
-        dateObj: new Date() // fallback to today
-      }
+      return { ...event, dateObj: new Date() }
     }
   })
 
-  // Get events for selected date
   const getEventsForDate = (date: Date) => {
-    const eventsForDate = eventDates.filter(event => {
-      const eventDate = event.dateObj
-      const matches = eventDate.toDateString() === date.toDateString()
-      if (matches) {
-        console.log(`EventCalendar - Found event for ${date.toDateString()}: ${event.title}`)
-      }
-      return matches
-    })
-    console.log(`EventCalendar - Events for ${date.toDateString()}:`, eventsForDate.length)
-    return eventsForDate
+    return eventDates.filter(event => event.dateObj.toDateString() === date.toDateString())
   }
 
-  // Get events for selected date
   const selectedDateEvents = getEventsForDate(selectedDate)
 
-  // Check if a date has events
   const hasEvents = (date: Date) => {
-    const hasEventsResult = eventDates.some(event => 
-      event.dateObj.toDateString() === date.toDateString()
-    )
-    if (hasEventsResult) {
-      console.log(`EventCalendar - Date ${date.toDateString()} has events`)
-    }
-    return hasEventsResult
+    return eventDates.some(event => event.dateObj.toDateString() === date.toDateString())
   }
 
-  // FIXED: Custom tile content to show event indicators with better visibility
   const tileContent = ({ date, view }: { date: Date; view: string }) => {
     if (view === 'month' && hasEvents(date)) {
       const dayEvents = getEventsForDate(date)
-      console.log(`EventCalendar - Rendering tile content for ${date.toDateString()}, events:`, dayEvents.length)
       return (
         <div className="flex justify-center mt-1">
           <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
-          {dayEvents.length > 1 && (
-            <div className="w-1 h-1 bg-blue-400 rounded-full ml-0.5"></div>
-          )}
+          {dayEvents.length > 1 && <div className="w-1 h-1 bg-blue-400 rounded-full ml-0.5"></div>}
         </div>
       )
     }
     return null
   }
 
-  // Custom tile class names
   const tileClassName = ({ date, view }: { date: Date; view: string }) => {
-    if (view === 'month' && hasEvents(date)) {
-      return 'has-events'
-    }
+    if (view === 'month' && hasEvents(date)) return 'has-events'
     return ''
   }
 
-  // Get upcoming events (next 7 days)
-  const getUpcomingEvents = () => {
-    const today = new Date()
-    const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000)
-    
+  // === FIXED: All upcoming events (no "next week" cap), sorted by date+time ===
+  const toDateTime = (e: EventWithDate) => {
+    const dt = new Date(e.dateObj)
+    const [hh, mm] = (e.time || '00:00').split(':').map(Number)
+    dt.setHours(hh || 0, mm || 0, 0, 0)
+    return dt
+  }
+
+  const getUpcomingEvents = (): EventWithDate[] => {
+    const now = new Date()
     return eventDates
-      .filter(event => event.dateObj >= today && event.dateObj <= nextWeek)
-      .sort((a, b) => a.dateObj.getTime() - b.dateObj.getTime())
-      .slice(0, 5)
+      .filter(e => toDateTime(e) >= now)               // all future (including later today)
+      .sort((a, b) => +toDateTime(a) - +toDateTime(b)) // by date + time
   }
 
   const upcomingEvents = getUpcomingEvents()
 
-  // FIXED: Calendar locale configuration
-  const getCalendarLocale = () => {
-    return i18n.language === 'ko' ? 'ko-KR' : 'en-US'
-  }
+  const getCalendarLocale = () => (i18n.language === 'ko' ? 'ko-KR' : 'en-US')
 
-  // FIXED: Calendar navigation labels based on language
-  const getNavigationLabel = ({ date, label, locale, view }: any) => {
-    if (i18n.language === 'ko') {
-      if (view === 'month') {
-        return `${date.getFullYear()}년 ${date.getMonth() + 1}월`
-      }
-      return label
+  const getNavigationLabel = ({ date, label, view }: any) => {
+    if (i18n.language === 'ko' && view === 'month') {
+      return `${date.getFullYear()}년 ${date.getMonth() + 1}월`
     }
     return label
   }
@@ -190,21 +131,13 @@ const EventCalendar: React.FC<EventCalendarProps> = ({ onEventClick }) => {
         <div className="flex items-center gap-2">
           <button
             onClick={() => setView('calendar')}
-            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-              view === 'calendar'
-                ? 'bg-blue-100 text-blue-700'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
+            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${view === 'calendar' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:text-gray-900'}`}
           >
             {t('dashboard.calendar.calendarView')}
           </button>
           <button
             onClick={() => setView('list')}
-            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-              view === 'list'
-                ? 'bg-blue-100 text-blue-700'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
+            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${view === 'list' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:text-gray-900'}`}
           >
             {t('dashboard.calendar.listView')}
           </button>
@@ -216,7 +149,7 @@ const EventCalendar: React.FC<EventCalendarProps> = ({ onEventClick }) => {
           <CalendarIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-900 mb-2">{t('dashboard.calendar.noEvents')}</h3>
           <p className="text-gray-500 mb-4">{t('dashboard.calendar.noEventsDescription')}</p>
-          <button 
+          <button
             onClick={() => window.location.href = '/events'}
             className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
           >
@@ -240,19 +173,16 @@ const EventCalendar: React.FC<EventCalendarProps> = ({ onEventClick }) => {
                 className="custom-calendar"
                 locale={getCalendarLocale()}
                 navigationLabel={getNavigationLabel}
-                formatMonthYear={(locale, date) => {
-                  if (i18n.language === 'ko') {
-                    return `${date.getFullYear()}년 ${date.getMonth() + 1}월`
-                  }
-                  return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long' })
-                }}
-                formatShortWeekday={(locale, date) => {
-                  if (i18n.language === 'ko') {
-                    const days = ['일', '월', '화', '수', '목', '금', '토']
-                    return days[date.getDay()]
-                  }
-                  return date.toLocaleDateString('en-US', { weekday: 'short' }).slice(0, 3)
-                }}
+                formatMonthYear={(locale, date) =>
+                  i18n.language === 'ko'
+                    ? `${date.getFullYear()}년 ${date.getMonth() + 1}월`
+                    : date.toLocaleDateString('en-US', { year: 'numeric', month: 'long' })
+                }
+                formatShortWeekday={(locale, date) =>
+                  i18n.language === 'ko'
+                    ? ['일', '월', '화', '수', '목', '금', '토'][date.getDay()]
+                    : date.toLocaleDateString('en-US', { weekday: 'short' }).slice(0, 3)
+                }
               />
             </div>
           </div>
@@ -272,9 +202,7 @@ const EventCalendar: React.FC<EventCalendarProps> = ({ onEventClick }) => {
                       onClick={() => onEventClick(event)}
                       className="p-3 bg-blue-50 rounded-lg cursor-pointer hover:bg-blue-100 transition-colors"
                     >
-                      <h4 className="font-medium text-gray-900 text-sm mb-1">
-                        {localizedContent.title}
-                      </h4>
+                      <h4 className="font-medium text-gray-900 text-sm mb-1">{localizedContent.title}</h4>
                       <div className="flex items-center gap-2 text-xs text-gray-600 mb-1">
                         <Clock className="w-3 h-3" />
                         <span>{formatTime(event.time)}</span>
@@ -283,7 +211,6 @@ const EventCalendar: React.FC<EventCalendarProps> = ({ onEventClick }) => {
                         <MapPin className="w-3 h-3" />
                         <span>{localizedContent.location}</span>
                       </div>
-                      {/* FIXED: Show attendance status */}
                       <div className="mt-2 flex items-center justify-between">
                         <span className="text-xs text-green-700 bg-green-100 px-2 py-1 rounded-full font-medium">
                           ✅ {t('dashboard.calendar.joined')}
@@ -305,7 +232,7 @@ const EventCalendar: React.FC<EventCalendarProps> = ({ onEventClick }) => {
             {t('dashboard.calendar.upcomingEvents')} ({upcomingEvents.length})
           </h3>
           {upcomingEvents.length > 0 ? (
-            <div className="space-y-4">
+            <div className="space-y-4 max-h-96 overflow-y-auto pr-1">
               {upcomingEvents.map((event) => {
                 const localizedContent = getLocalizedEventContent(event)
                 return (
@@ -359,7 +286,6 @@ const EventCalendar: React.FC<EventCalendarProps> = ({ onEventClick }) => {
           border: none;
           font-family: inherit;
         }
-        
         .calendar-container :global(.react-calendar__tile) {
           padding: 0.75rem 0.5rem;
           background: none;
@@ -367,30 +293,24 @@ const EventCalendar: React.FC<EventCalendarProps> = ({ onEventClick }) => {
           font-size: 0.875rem;
           position: relative;
         }
-        
         .calendar-container :global(.react-calendar__tile:hover) {
           background-color: #f3f4f6;
         }
-        
         .calendar-container :global(.react-calendar__tile--active) {
           background-color: #3b82f6 !important;
           color: white;
         }
-        
         .calendar-container :global(.react-calendar__tile--now) {
           background-color: #dbeafe;
           color: #1d4ed8;
         }
-        
         .calendar-container :global(.react-calendar__tile.has-events) {
           font-weight: 600;
           background-color: #eff6ff;
         }
-        
         .calendar-container :global(.react-calendar__navigation) {
           margin-bottom: 1rem;
         }
-        
         .calendar-container :global(.react-calendar__navigation button) {
           background: none;
           border: none;
@@ -399,19 +319,16 @@ const EventCalendar: React.FC<EventCalendarProps> = ({ onEventClick }) => {
           color: #374151;
           padding: 0.5rem;
         }
-        
         .calendar-container :global(.react-calendar__navigation button:hover) {
           background-color: #f3f4f6;
           border-radius: 0.5rem;
         }
-        
         .calendar-container :global(.react-calendar__month-view__weekdays) {
           font-weight: 600;
           font-size: 0.75rem;
           color: #6b7280;
           text-transform: uppercase;
         }
-        
         .calendar-container :global(.react-calendar__month-view__weekdays__weekday) {
           padding: 0.5rem;
         }

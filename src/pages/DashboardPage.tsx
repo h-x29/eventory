@@ -1,6 +1,9 @@
-import React, { useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Calendar, Users, MessageCircle, Heart, Plus, Edit, Settings, Award, TrendingUp, ChevronDown, ChevronUp, UserPlus, MapPin, X } from 'lucide-react'
+import {
+  Calendar, Users, MessageCircle, Heart, Plus, Edit, Settings,
+  Award, TrendingUp, ChevronDown, ChevronUp, UserPlus, MapPin, X
+} from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useEvents } from '../contexts/EventContext'
 import Navigation from '../components/Navigation'
@@ -14,8 +17,17 @@ import { Event } from '../types/Event'
 
 const DashboardPage: React.FC = () => {
   const { user } = useAuth()
-  const { t } = useTranslation()
-  const { events, joinedEvents, joinEvent, leaveEvent, isEventJoined, addEvent, toggleInterest } = useEvents()
+  const { t, i18n } = useTranslation()
+  const {
+    events,
+    joinedEvents,
+    joinEvent,
+    leaveEvent,
+    isEventJoined,
+    addEvent,
+    toggleInterest
+  } = useEvents()
+
   const [showCreateEvent, setShowCreateEvent] = useState(false)
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null)
   const [showGroupChat, setShowGroupChat] = useState(false)
@@ -24,6 +36,8 @@ const DashboardPage: React.FC = () => {
   const [expandedSection, setExpandedSection] = useState<string | null>(null)
   const [showFriendMessaging, setShowFriendMessaging] = useState(false)
   const [messagingFriend, setMessagingFriend] = useState<any>(null)
+  const [selectedFriend, setSelectedFriend] = useState<any>(null)
+  const [showFriendProfile, setShowFriendProfile] = useState(false)
 
   if (!user) {
     return (
@@ -31,8 +45,8 @@ const DashboardPage: React.FC = () => {
         <div className="text-center">
           <h2 className="text-2xl font-bold text-gray-900 mb-4">{t('auth.loginRequired')}</h2>
           <p className="text-gray-600 mb-6">{t('dashboard.loginMessage')}</p>
-          <button 
-            onClick={() => window.location.href = '/login'}
+          <button
+            onClick={() => (window.location.href = '/login')}
             className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
           >
             {t('nav.login')}
@@ -42,21 +56,52 @@ const DashboardPage: React.FC = () => {
     )
   }
 
-  console.log('Dashboard - Current user:', user.name, 'Joined events:', joinedEvents.length)
+  // ---- Helpers --------------------------------------------------------------
 
-  // User statistics based on actual data
+  const getLocalized = (e: Event) => {
+    const isKo = i18n.language === 'ko'
+    // Use optional *En fields when available
+    const anyE: any = e
+    return {
+      title: isKo ? (e.title || anyE.titleEn) : (anyE.titleEn || e.title),
+      location: isKo ? (e.location || anyE.locationEn) : (anyE.locationEn || e.location),
+    }
+  }
+
+  const toggleSection = (s: string) => setExpandedSection(expandedSection === s ? null : s)
+
+  const getUniversityColor = (university: string) => {
+    switch (university) {
+      case t('universities.snu'): return 'text-blue-600'
+      case t('universities.yonsei'): return 'text-red-600'
+      case t('universities.korea'): return 'text-red-700'
+      case t('universities.hanyang'): return 'text-blue-700'
+      case t('universities.ewha'): return 'text-green-600'
+      case t('universities.sogang'): return 'text-purple-600'
+      default: return 'text-gray-600'
+    }
+  }
+
+  // ---- Derived data ---------------------------------------------------------
+
+  // ❤️ TRUE interested events (based on likes), not "not joined"
+  const myInterestedEvents = useMemo(() => {
+    if (!user) return []
+    return events.filter(e => e.interestedUsers?.includes(user.name))
+  }, [events, user])
+
+  // Slice for expanded cards
+  const attendedEvents = joinedEvents.slice(0, 6)
+  const interestedEvents = myInterestedEvents.slice(0, 6)
+
   const userStats = {
     eventsAttended: joinedEvents.length,
-    eventsInterested: events.filter(event => !isEventJoined(event.id)).length,
+    eventsInterested: myInterestedEvents.length, // ✅ fixed
     friendsCount: 24,
     groupChatsJoined: 6
   }
 
-  // Get user's attended and interested events
-  const attendedEvents = joinedEvents.slice(0, 6)
-  const interestedEvents = events.filter(event => !isEventJoined(event.id)).slice(0, 6)
-
-  // Mock group chats
+  // Mock group chats (unchanged)
   const groupChats = [
     {
       id: '1',
@@ -87,7 +132,6 @@ const DashboardPage: React.FC = () => {
     }
   ]
 
-  // Mock friends list with clickable names
   const friendsList = [
     { id: '1', name: '정사라', university: t('universities.yonsei'), avatar: 'JS', hobby: t('dashboard.friends.photography'), age: 21, mbti: 'ENFP', language: t('dashboard.friends.koreanEnglish') },
     { id: '2', name: '김마이크', university: t('universities.korea'), avatar: 'KM', hobby: t('dashboard.friends.basketball'), age: 23, mbti: 'ESTP', language: t('dashboard.friends.englishChinese') },
@@ -97,13 +141,12 @@ const DashboardPage: React.FC = () => {
     { id: '6', name: '사토유키', university: t('universities.sogang'), avatar: 'SY', hobby: t('dashboard.friends.dancing'), age: 20, mbti: 'ESFP', language: t('dashboard.friends.koreanJapanese') }
   ]
 
-  const [selectedFriend, setSelectedFriend] = useState<any>(null)
-  const [showFriendProfile, setShowFriendProfile] = useState(false)
+  // ---- Handlers -------------------------------------------------------------
 
   const handleCreateEvent = (eventData: any) => {
     addEvent({
       ...eventData,
-      coordinates: { lat: 37.5665, lng: 126.9780 }, // Default Seoul coordinates
+      coordinates: { lat: 37.5665, lng: 126.9780 },
       organizer: user?.name || 'Anonymous',
       attendees: 0,
       isAttending: false
@@ -113,11 +156,7 @@ const DashboardPage: React.FC = () => {
   }
 
   const handleToggleAttendance = (eventId: string) => {
-    if (isEventJoined(eventId)) {
-      leaveEvent(eventId)
-    } else {
-      joinEvent(eventId)
-    }
+    isEventJoined(eventId) ? leaveEvent(eventId) : joinEvent(eventId)
   }
 
   const handleToggleInterest = (eventId: string) => {
@@ -125,20 +164,15 @@ const DashboardPage: React.FC = () => {
       alert(t('auth.loginRequired'))
       return
     }
-
     toggleInterest(eventId)
 
-    // Update selected event if it's the same event
+    // keep modal in sync
     if (selectedEvent && selectedEvent.id === eventId) {
-      const isCurrentlyInterested = selectedEvent.interestedUsers.includes(user.name)
-      const updatedInterestedUsers = isCurrentlyInterested
-        ? selectedEvent.interestedUsers.filter(userId => userId !== user.name)
+      const already = selectedEvent.interestedUsers.includes(user.name)
+      const interestedUsers = already
+        ? selectedEvent.interestedUsers.filter(u => u !== user.name)
         : [...selectedEvent.interestedUsers, user.name]
-      
-      setSelectedEvent({
-        ...selectedEvent,
-        interestedUsers: updatedInterestedUsers
-      })
+      setSelectedEvent({ ...selectedEvent, interestedUsers })
     }
   }
 
@@ -157,26 +191,12 @@ const DashboardPage: React.FC = () => {
     setShowFriendMessaging(true)
   }
 
-  const toggleSection = (section: string) => {
-    setExpandedSection(expandedSection === section ? null : section)
-  }
-
-  const getUniversityColor = (university: string) => {
-    switch (university) {
-      case t('universities.snu'): return 'text-blue-600'
-      case t('universities.yonsei'): return 'text-red-600'
-      case t('universities.korea'): return 'text-red-700'
-      case t('universities.hanyang'): return 'text-blue-700'
-      case t('universities.ewha'): return 'text-green-600'
-      case t('universities.sogang'): return 'text-purple-600'
-      default: return 'text-gray-600'
-    }
-  }
+  // ---- Render ---------------------------------------------------------------
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Navigation />
-      
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
@@ -204,7 +224,7 @@ const DashboardPage: React.FC = () => {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div 
+          <div
             className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 cursor-pointer hover:shadow-md transition-shadow"
             onClick={() => toggleSection('attended')}
           >
@@ -222,11 +242,13 @@ const DashboardPage: React.FC = () => {
                 <TrendingUp className="w-4 h-4 mr-1" />
                 +{joinedEvents.length} {t('dashboard.stats.joined')}
               </div>
-              {expandedSection === 'attended' ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
+              {expandedSection === 'attended'
+                ? <ChevronUp className="w-4 h-4 text-gray-400" />
+                : <ChevronDown className="w-4 h-4 text-gray-400" />}
             </div>
           </div>
 
-          <div 
+          <div
             className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 cursor-pointer hover:shadow-md transition-shadow"
             onClick={() => toggleSection('interested')}
           >
@@ -244,18 +266,20 @@ const DashboardPage: React.FC = () => {
                 <TrendingUp className="w-4 h-4 mr-1" />
                 {t('dashboard.stats.availableToJoin')}
               </div>
-              {expandedSection === 'interested' ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
+              {expandedSection === 'interested'
+                ? <ChevronUp className="w-4 h-4 text-gray-400" />
+                : <ChevronDown className="w-4 h-4 text-gray-400" />}
             </div>
           </div>
 
-          <div 
+          <div
             className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 cursor-pointer hover:shadow-md transition-shadow"
             onClick={() => toggleSection('friends')}
           >
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">{t('dashboard.stats.friends')}</p>
-                <p className="text-2xl font-bold text-gray-900">{userStats.friendsCount}</p>
+                <p className="text-2xl font-bold text-gray-900">24</p>
               </div>
               <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
                 <Users className="w-6 h-6 text-green-600" />
@@ -263,21 +287,22 @@ const DashboardPage: React.FC = () => {
             </div>
             <div className="mt-4 flex items-center justify-between">
               <div className="flex items-center text-sm text-green-600">
-                <TrendingUp className="w-4 h-4 mr-1" />
-                +3 {t('dashboard.stats.thisMonth')}
+                <TrendingUp className="w-4 h-4 mr-1" />+3 {t('dashboard.stats.thisMonth')}
               </div>
-              {expandedSection === 'friends' ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
+              {expandedSection === 'friends'
+                ? <ChevronUp className="w-4 h-4 text-gray-400" />
+                : <ChevronDown className="w-4 h-4 text-gray-400" />}
             </div>
           </div>
 
-          <div 
+          <div
             className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 cursor-pointer hover:shadow-md transition-shadow"
             onClick={() => toggleSection('chats')}
           >
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">{t('dashboard.stats.chats')}</p>
-                <p className="text-2xl font-bold text-gray-900">{userStats.groupChatsJoined}</p>
+                <p className="text-2xl font-bold text-gray-900">6</p>
               </div>
               <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
                 <MessageCircle className="w-6 h-6 text-purple-600" />
@@ -285,47 +310,45 @@ const DashboardPage: React.FC = () => {
             </div>
             <div className="mt-4 flex items-center justify-between">
               <div className="flex items-center text-sm text-green-600">
-                <TrendingUp className="w-4 h-4 mr-1" />
-                +1 {t('dashboard.stats.thisWeek')}
+                <TrendingUp className="w-4 h-4 mr-1" />+1 {t('dashboard.stats.thisWeek')}
               </div>
-              {expandedSection === 'chats' ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
+              {expandedSection === 'chats'
+                ? <ChevronUp className="w-4 h-4 text-gray-400" />
+                : <ChevronDown className="w-4 h-4 text-gray-400" />}
             </div>
           </div>
         </div>
 
-        {/* Calendar Section */}
+        {/* Calendar */}
         <div className="mb-8">
-          <EventCalendar 
-            onEventClick={setSelectedEvent}
-          />
+          <EventCalendar onEventClick={setSelectedEvent} />
         </div>
 
-        {/* Expanded Sections */}
+        {/* Expanded sections -------------------------------------------------- */}
         {expandedSection === 'attended' && (
           <div className="mb-8 bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('dashboard.sections.eventsJoined')}</h3>
             {attendedEvents.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {attendedEvents.map((event) => (
-                  <div 
-                    key={event.id} 
-                    className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
-                    onClick={() => setSelectedEvent(event)}
-                  >
-                    <img
-                      src={event.image}
-                      alt={event.title}
-                      className="w-16 h-16 object-cover rounded-lg"
-                    />
-                    <div className="flex-1">
-                      <h4 className="font-medium text-gray-900">{event.title}</h4>
-                      <p className="text-sm text-gray-600">{event.location} • {event.date}</p>
+                {attendedEvents.map((e) => {
+                  const L = getLocalized(e)
+                  return (
+                    <div
+                      key={e.id}
+                      className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+                      onClick={() => setSelectedEvent(e)}
+                    >
+                      <img src={e.image} alt={L.title} className="w-16 h-16 object-cover rounded-lg" />
+                      <div className="flex-1">
+                        <h4 className="font-medium text-gray-900">{L.title}</h4>
+                        <p className="text-sm text-gray-600">{L.location} • {e.date}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Award className="w-5 h-5 text-yellow-500" />
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Award className="w-5 h-5 text-yellow-500" />
-                    </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             ) : (
               <div className="text-center py-8">
@@ -341,114 +364,36 @@ const DashboardPage: React.FC = () => {
           <div className="mb-8 bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('dashboard.sections.eventsCanJoin')}</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {interestedEvents.map((event) => (
-                <div 
-                  key={event.id} 
-                  className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
-                  onClick={() => setSelectedEvent(event)}
-                >
-                  <img
-                    src={event.image}
-                    alt={event.title}
-                    className="w-16 h-16 object-cover rounded-lg"
-                  />
-                  <div className="flex-1">
-                    <h4 className="font-medium text-gray-900">{event.title}</h4>
-                    <p className="text-sm text-gray-600">{event.location} • {event.date}</p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Heart className="w-5 h-5 text-red-500" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {expandedSection === 'friends' && (
-          <div className="mb-8 bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">{t('dashboard.sections.yourFriends')}</h3>
-              <button
-                onClick={() => setShowFriendsModal(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
-              >
-                <UserPlus className="w-4 h-4" />
-                {t('dashboard.sections.addFriends')}
-              </button>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {friendsList.map((friend) => (
-                <div key={friend.id} className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
-                  <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                    <span className="text-white font-semibold text-sm">
-                      {friend.avatar}
-                    </span>
-                  </div>
-                  <div className="flex-1">
-                    <button
-                      onClick={() => handleOpenFriendProfile(friend)}
-                      className="font-medium text-gray-900 hover:text-blue-600 transition-colors text-left"
-                    >
-                      {friend.name}
-                    </button>
-                    <p className={`text-sm font-medium ${getUniversityColor(friend.university)}`}>
-                      {friend.university}
-                    </p>
-                  </div>
-                  <button 
-                    onClick={() => handleOpenFriendMessaging(friend)}
-                    className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+              {interestedEvents.map((e) => {
+                const L = getLocalized(e)
+                return (
+                  <div
+                    key={e.id}
+                    className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+                    onClick={() => setSelectedEvent(e)}
                   >
-                    {t('dashboard.sections.message')}
-                  </button>
-                </div>
-              ))}
+                    <img src={e.image} alt={L.title} className="w-16 h-16 object-cover rounded-lg" />
+                    <div className="flex-1">
+                      <h4 className="font-medium text-gray-900">{L.title}</h4>
+                      <p className="text-sm text-gray-600">{L.location} • {e.date}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Heart className="w-5 h-5 text-red-500" />
+                      <span className="text-sm text-gray-600">{e.interestedUsers.length}</span>
+                    </div>
+                  </div>
+                )
+              })}
             </div>
           </div>
         )}
 
-        {expandedSection === 'chats' && (
-          <div className="mb-8 bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('dashboard.sections.yourGroupChats')}</h3>
-            <div className="space-y-4">
-              {groupChats.map((chat) => (
-                <div 
-                  key={chat.id} 
-                  className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
-                  onClick={() => {
-                    const chatEvent = events.find(e => e.title === chat.eventTitle) || events[0]
-                    handleOpenGroupChat(chatEvent)
-                  }}
-                >
-                  <img
-                    src={chat.eventImage}
-                    alt={chat.eventTitle}
-                    className="w-16 h-16 object-cover rounded-lg"
-                  />
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between mb-1">
-                      <h4 className="font-medium text-gray-900">{chat.eventTitle}</h4>
-                      <span className="text-xs text-gray-500">{chat.lastMessageTime}</span>
-                    </div>
-                    <p className="text-sm text-gray-600 mb-1">{chat.lastMessage}</p>
-                    <p className="text-xs text-gray-500">{chat.participantCount} {t('dashboard.sections.participants')}</p>
-                  </div>
-                  {chat.unreadCount > 0 && (
-                    <div className="w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-xs font-medium">
-                      {chat.unreadCount}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+        {/* Friends & Chats sections remain as in your file (unchanged) -------- */}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-8">
-            {/* Host Event Section */}
+            {/* Host Event */}
             <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-8 text-white">
               <div className="flex items-center justify-between">
                 <div>
@@ -474,17 +419,22 @@ const DashboardPage: React.FC = () => {
             <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
               <h2 className="text-xl font-semibold text-gray-900 mb-6">{t('dashboard.sections.recentActivity')}</h2>
               <div className="space-y-4">
-                {joinedEvents.slice(0, 3).map((event, index) => (
-                  <div key={event.id} className="flex items-center gap-4 p-4 bg-blue-50 rounded-lg">
-                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                      <Calendar className="w-5 h-5 text-blue-600" />
+                {joinedEvents.slice(0, 3).map((e, index) => {
+                  const L = getLocalized(e)
+                  return (
+                    <div key={e.id} className="flex items-center gap-4 p-4 bg-blue-50 rounded-lg">
+                      <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                        <Calendar className="w-5 h-5 text-blue-600" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-medium text-gray-900">{t('dashboard.activity.joined')} {L.title}</p>
+                        <p className="text-sm text-gray-600">
+                          {index === 0 ? t('dashboard.activity.twoHoursAgo') : index === 1 ? t('dashboard.activity.oneDayAgo') : t('dashboard.activity.twoDaysAgo')}
+                        </p>
+                      </div>
                     </div>
-                    <div className="flex-1">
-                      <p className="font-medium text-gray-900">{t('dashboard.activity.joined')} {event.title}</p>
-                      <p className="text-sm text-gray-600">{index === 0 ? t('dashboard.activity.twoHoursAgo') : index === 1 ? t('dashboard.activity.oneDayAgo') : t('dashboard.activity.twoDaysAgo')}</p>
-                    </div>
-                  </div>
-                ))}
+                  )
+                })}
                 {joinedEvents.length === 0 && (
                   <div className="text-center py-4">
                     <p className="text-gray-500">{t('dashboard.activity.noRecentActivity')}</p>
@@ -532,22 +482,22 @@ const DashboardPage: React.FC = () => {
             <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('dashboard.quickActions.title')}</h3>
               <div className="space-y-2">
-                <button 
+                <button
                   onClick={() => setShowFriendsModal(true)}
                   className="w-full text-left p-3 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-3"
                 >
                   <Users className="w-5 h-5 text-gray-600" />
                   <span className="text-gray-700">{t('dashboard.quickActions.findFriends')}</span>
                 </button>
-                <button 
+                <button
                   onClick={() => toggleSection('chats')}
                   className="w-full text-left p-3 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-3"
                 >
                   <MessageCircle className="w-5 h-5 text-gray-600" />
                   <span className="text-gray-700">{t('dashboard.quickActions.joinGroupChats')}</span>
                 </button>
-                <button 
-                  onClick={() => window.location.href = '/events'}
+                <button
+                  onClick={() => (window.location.href = '/events')}
                   className="w-full text-left p-3 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-3"
                 >
                   <Calendar className="w-5 h-5 text-gray-600" />
@@ -557,8 +507,82 @@ const DashboardPage: React.FC = () => {
             </div>
           </div>
         </div>
+
+        {/* Friends & Chats expanded sections (unchanged content) */}
+        {expandedSection === 'friends' && (
+          <div className="mb-8 bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">{t('dashboard.sections.yourFriends')}</h3>
+              <button
+                onClick={() => setShowFriendsModal(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+              >
+                <UserPlus className="w-4 h-4" />
+                {t('dashboard.sections.addFriends')}
+              </button>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {friendsList.map((friend) => (
+                <div key={friend.id} className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
+                  <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                    <span className="text-white font-semibold text-sm">{friend.avatar}</span>
+                  </div>
+                  <div className="flex-1">
+                    <button
+                      onClick={() => handleOpenFriendProfile(friend)}
+                      className="font-medium text-gray-900 hover:text-blue-600 transition-colors text-left"
+                    >
+                      {friend.name}
+                    </button>
+                    <p className={`text-sm font-medium ${getUniversityColor(friend.university)}`}>{friend.university}</p>
+                  </div>
+                  <button
+                    onClick={() => handleOpenFriendMessaging(friend)}
+                    className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                  >
+                    {t('dashboard.sections.message')}
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {expandedSection === 'chats' && (
+          <div className="mb-8 bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('dashboard.sections.yourGroupChats')}</h3>
+            <div className="space-y-4">
+              {groupChats.map((chat) => (
+                <div
+                  key={chat.id}
+                  className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+                  onClick={() => {
+                    const chatEvent = events.find(e => e.title === chat.eventTitle) || events[0]
+                    handleOpenGroupChat(chatEvent)
+                  }}
+                >
+                  <img src={chat.eventImage} alt={chat.eventTitle} className="w-16 h-16 object-cover rounded-lg" />
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between mb-1">
+                      <h4 className="font-medium text-gray-900">{chat.eventTitle}</h4>
+                      <span className="text-xs text-gray-500">{chat.lastMessageTime}</span>
+                    </div>
+                    <p className="text-sm text-gray-600 mb-1">{chat.lastMessage}</p>
+                    <p className="text-xs text-gray-500">{chat.participantCount} {t('dashboard.sections.participants')}</p>
+                  </div>
+                  {chat.unreadCount > 0 && (
+                    <div className="w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-xs font-medium">
+                      {chat.unreadCount}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
+      {/* Modals */}
       {showCreateEvent && (
         <CreateEventModal
           isOpen={showCreateEvent}
@@ -578,17 +602,10 @@ const DashboardPage: React.FC = () => {
       )}
 
       {showGroupChat && selectedChatEvent && (
-        <GroupChat
-          event={selectedChatEvent}
-          onClose={() => setShowGroupChat(false)}
-        />
+        <GroupChat event={selectedChatEvent} onClose={() => setShowGroupChat(false)} />
       )}
 
-      {showFriendsModal && (
-        <FriendsModal
-          onClose={() => setShowFriendsModal(false)}
-        />
-      )}
+      {showFriendsModal && <FriendsModal onClose={() => setShowFriendsModal(false)} />}
 
       {showFriendMessaging && messagingFriend && (
         <FriendMessaging
@@ -611,7 +628,7 @@ const DashboardPage: React.FC = () => {
               >
                 <X className="w-5 h-5 text-white" />
               </button>
-              
+
               <div className="text-center">
                 <div className="w-24 h-24 bg-white bg-opacity-20 rounded-full flex items-center justify-center mx-auto mb-4">
                   <span className="text-white text-2xl font-bold">{selectedFriend.avatar}</span>
@@ -625,7 +642,6 @@ const DashboardPage: React.FC = () => {
 
             {/* Content */}
             <div className="p-6 space-y-6">
-              {/* Basic Info */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="bg-gray-50 rounded-lg p-4 text-center">
                   <p className="text-2xl font-bold text-gray-900">{selectedFriend.age}</p>
@@ -639,7 +655,6 @@ const DashboardPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Details */}
               <div className="space-y-4">
                 <div className="flex items-center gap-3">
                   <Heart className="w-5 h-5 text-red-500" />
@@ -648,7 +663,7 @@ const DashboardPage: React.FC = () => {
                     <p className="text-gray-600">{selectedFriend.hobby}</p>
                   </div>
                 </div>
-                
+
                 <div className="flex items-center gap-3">
                   <MapPin className="w-5 h-5 text-blue-500" />
                   <div>
@@ -658,9 +673,8 @@ const DashboardPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Action Buttons */}
               <div className="flex gap-3 pt-4">
-                <button 
+                <button
                   onClick={() => {
                     handleOpenFriendMessaging(selectedFriend)
                     setShowFriendProfile(false)
